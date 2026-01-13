@@ -1,255 +1,81 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useWallet } from '@/hooks/useWallet';
-import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
-import { beneficiaryService, categoryService } from '@/lib/firebase/services';
-import { initializeCategories } from '@/lib/firebase/init-collections';
-import { Plus, Users, DollarSign, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import DonationVerification from './admin/DonationVerification';
+import FundManagement from './admin/FundManagement';
+import FundDistribution from './admin/FundDistribution';
+import AdminAnalytics from './admin/AdminAnalytics';
+import { 
+  CheckCircle, 
+  DollarSign, 
+  ArrowRight, 
+  BarChart3, 
+  Users,
+  Wallet
+} from 'lucide-react';
+
+type Tab = 'verification' | 'funds' | 'distribution' | 'analytics';
 
 export default function AdminDashboard() {
-  const { address, signer, isConnected } = useWallet();
-  const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [newBeneficiary, setNewBeneficiary] = useState({
-    address: '',
-    name: '',
-    email: '',
-    categories: {} as Record<string, number>,
-  });
+  const { profile } = useAuth();
+  const [activeTab, setActiveTab] = useState<Tab>('verification');
 
-  useEffect(() => {
-    if (isConnected) {
-      // Initialize categories if they don't exist
-      initializeCategories().catch(console.error);
-      loadData();
-    }
-  }, [isConnected]);
-
-  const loadData = async () => {
-    try {
-      const [beneficiariesData, categoriesData] = await Promise.all([
-        beneficiaryService.getAll(),
-        categoryService.getAll(),
-      ]);
-      setBeneficiaries(beneficiariesData);
-      setCategories(categoriesData);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    }
-  };
-
-  const handleWhitelist = async () => {
-    if (!signer || !newBeneficiary.address) return;
-
-    setLoading(true);
-    try {
-      const contract = getReliefTokenContract(signer);
-      const categoryNames = Object.keys(newBeneficiary.categories);
-      const limits = Object.values(newBeneficiary.categories).map(v => BigInt(v));
-
-      // Whitelist on blockchain
-      await reliefTokenFunctions.whitelistBeneficiary(
-        contract,
-        newBeneficiary.address,
-        categoryNames,
-        limits
-      );
-
-      // Save to Firebase
-      await beneficiaryService.create({
-        walletAddress: newBeneficiary.address,
-        name: newBeneficiary.name,
-        email: newBeneficiary.email,
-        verified: true,
-        categories: Object.fromEntries(
-          categoryNames.map(cat => [
-            cat,
-            { limit: newBeneficiary.categories[cat], spent: 0 },
-          ])
-        ),
-      });
-
-      setNewBeneficiary({ address: '', name: '', email: '', categories: {} });
-      await loadData();
-    } catch (error) {
-      console.error('Error whitelisting beneficiary:', error);
-      alert('Failed to whitelist beneficiary');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDistribute = async (beneficiaryAddress: string, amount: string, category: string) => {
-    if (!signer) return;
-
-    setLoading(true);
-    try {
-      const contract = getReliefTokenContract(signer);
-      await reliefTokenFunctions.distributeRelief(
-        contract,
-        beneficiaryAddress,
-        BigInt(amount),
-        category
-      );
-      alert('Relief distributed successfully!');
-      await loadData();
-    } catch (error) {
-      console.error('Error distributing relief:', error);
-      alert('Failed to distribute relief');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isConnected) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">Please connect your wallet to access the admin dashboard.</p>
-      </div>
-    );
-  }
+  const tabs = [
+    { id: 'verification' as Tab, label: 'Donation Verification', icon: CheckCircle },
+    { id: 'funds' as Tab, label: 'Fund Management', icon: DollarSign },
+    { id: 'distribution' as Tab, label: 'Fund Distribution', icon: ArrowRight },
+    { id: 'analytics' as Tab, label: 'Analytics', icon: BarChart3 },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center gap-3">
-            <Users className="w-8 h-8 text-blue-600" />
-            <div>
-              <p className="text-sm text-gray-600">Total Beneficiaries</p>
-              <p className="text-2xl font-bold">{beneficiaries.length}</p>
-            </div>
+      {/* Welcome Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">
+              Welcome, {profile?.displayName || 'Admin'}!
+            </h2>
+            <p className="text-blue-100">
+              Manage donations, funds, and relief distribution from this dashboard
+            </p>
           </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center gap-3">
-            <DollarSign className="w-8 h-8 text-green-600" />
-            <div>
-              <p className="text-sm text-gray-600">Active Relief</p>
-              <p className="text-2xl font-bold">Active</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center gap-3">
-            <FileText className="w-8 h-8 text-purple-600" />
-            <div>
-              <p className="text-sm text-gray-600">Transactions</p>
-              <p className="text-2xl font-bold">Tracked</p>
-            </div>
+          <div className="hidden md:block">
+            <Users className="w-16 h-16 text-blue-200" />
           </div>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <Plus className="w-5 h-5" />
-          Whitelist New Beneficiary
-        </h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Wallet Address</label>
-            <input
-              type="text"
-              value={newBeneficiary.address}
-              onChange={(e) => setNewBeneficiary({ ...newBeneficiary, address: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg"
-              placeholder="0x..."
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
-            <input
-              type="text"
-              value={newBeneficiary.name}
-              onChange={(e) => setNewBeneficiary({ ...newBeneficiary, name: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Category Limits</label>
-            <div className="space-y-2">
-              {categories.map((cat) => (
-                <div key={cat.id} className="flex items-center gap-2">
-                  <span className="w-32">{cat.name}:</span>
-                  <input
-                    type="number"
-                    value={newBeneficiary.categories[cat.id] || ''}
-                    onChange={(e) =>
-                      setNewBeneficiary({
-                        ...newBeneficiary,
-                        categories: {
-                          ...newBeneficiary.categories,
-                          [cat.id]: parseInt(e.target.value) || 0,
-                        },
-                      })
-                    }
-                    className="flex-1 px-4 py-2 border rounded-lg"
-                    placeholder="Limit amount"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-          <button
-            onClick={handleWhitelist}
-            disabled={loading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Processing...' : 'Whitelist Beneficiary'}
-          </button>
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-lg shadow-lg border-b">
+        <div className="flex border-b border-gray-200 overflow-x-auto">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-6 py-4 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="whitespace-nowrap">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-bold mb-4">Beneficiaries</h2>
-        <div className="space-y-4">
-          {beneficiaries.map((ben) => (
-            <div key={ben.walletAddress} className="border rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-semibold">{ben.name}</p>
-                  <p className="text-sm text-gray-600 font-mono">{ben.walletAddress}</p>
-                </div>
-                <div className="space-y-2">
-                  {Object.entries(ben.categories || {}).map(([cat, data]: [string, any]) => {
-                    const inputId = `distribute-${ben.walletAddress}-${cat}`;
-                    return (
-                      <div key={cat} className="flex gap-4 items-center">
-                        <span className="text-sm">{cat}:</span>
-                        <input
-                          id={inputId}
-                          type="number"
-                          placeholder="Amount"
-                          className="w-32 px-2 py-1 border rounded"
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              const input = e.target as HTMLInputElement;
-                              handleDistribute(ben.walletAddress, input.value, cat);
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={() => {
-                            const input = document.getElementById(inputId) as HTMLInputElement;
-                            if (input && input.value) {
-                              handleDistribute(ben.walletAddress, input.value, cat);
-                            }
-                          }}
-                          className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                        >
-                          Distribute
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Tab Content */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        {activeTab === 'verification' && <DonationVerification />}
+        {activeTab === 'funds' && <FundManagement />}
+        {activeTab === 'distribution' && <FundDistribution />}
+        {activeTab === 'analytics' && <AdminAnalytics />}
       </div>
     </div>
   );

@@ -130,25 +130,102 @@ export const donationService = {
    * Get pending donations (for admin verification)
    */
   async getPending(limitCount: number = 50): Promise<Donation[]> {
-    const q = query(
-      collection(db, 'donations'),
-      where('status', '==', 'pending'),
-      orderBy('createdAt', 'desc'),
-      limit(limitCount)
-    );
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-        verifiedAt: data.verifiedAt?.toDate(),
-        distributedAt: data.distributedAt?.toDate(),
-      } as Donation;
-    });
+    try {
+      // Try with orderBy first (requires index)
+      const q = query(
+        collection(db, 'donations'),
+        where('status', '==', 'pending'),
+        orderBy('createdAt', 'desc'),
+        limit(limitCount)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt.toDate(),
+          updatedAt: data.updatedAt.toDate(),
+          verifiedAt: data.verifiedAt?.toDate(),
+          distributedAt: data.distributedAt?.toDate(),
+        } as Donation;
+      });
+    } catch (error: any) {
+      // If index error, fallback to query without orderBy
+      if (error?.code === 'failed-precondition') {
+        console.warn('Index not found, using fallback query without orderBy');
+        const q = query(
+          collection(db, 'donations'),
+          where('status', '==', 'pending'),
+          limit(limitCount)
+        );
+        const querySnapshot = await getDocs(q);
+        
+        const donations = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+            verifiedAt: data.verifiedAt?.toDate(),
+            distributedAt: data.distributedAt?.toDate(),
+          } as Donation;
+        });
+        
+        // Sort manually
+        return donations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get all donations (for admin view)
+   */
+  async getAll(): Promise<Donation[]> {
+    try {
+      const q = query(
+        collection(db, 'donations'),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt.toDate(),
+          updatedAt: data.updatedAt.toDate(),
+          verifiedAt: data.verifiedAt?.toDate(),
+          distributedAt: data.distributedAt?.toDate(),
+        } as Donation;
+      });
+    } catch (error: any) {
+      // If index error, fallback to query without orderBy
+      if (error?.code === 'failed-precondition') {
+        console.warn('Index not found, using fallback query without orderBy');
+        const querySnapshot = await getDocs(collection(db, 'donations'));
+        
+        const donations = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+            verifiedAt: data.verifiedAt?.toDate(),
+            distributedAt: data.distributedAt?.toDate(),
+          } as Donation;
+        });
+        
+        // Sort manually
+        return donations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
+      throw error;
+    }
   },
 
   /**
