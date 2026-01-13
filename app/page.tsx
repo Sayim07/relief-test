@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Shield, Users, Wallet, FileText, ArrowRight } from 'lucide-react';
+import { Shield, Users, Wallet, FileText, ArrowRight, Heart, HandHeart } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -52,31 +52,69 @@ export default function Home() {
           <h2 className="text-2xl font-bold text-center mb-8">Select Your Role</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <Link
-              href="/admin"
+              href="/login"
               className="group p-6 border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
             >
               <div className="flex items-center justify-between mb-4">
                 <Users className="w-8 h-8 text-blue-600" />
                 <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Admin Dashboard</h3>
+              <h3 className="text-xl font-semibold mb-2">Admin</h3>
               <p className="text-gray-600">
                 Manage beneficiaries, distribute relief funds, and monitor transactions
               </p>
             </Link>
 
             <Link
-              href="/beneficiary"
+              href="/login"
               className="group p-6 border-2 border-green-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all"
             >
               <div className="flex items-center justify-between mb-4">
                 <Wallet className="w-8 h-8 text-green-600" />
                 <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Beneficiary Dashboard</h3>
+              <h3 className="text-xl font-semibold mb-2">Beneficiary</h3>
               <p className="text-gray-600">
                 View your balance, spending limits, and make category-based transfers
               </p>
+            </Link>
+
+            <Link
+              href="/login"
+              className="group p-6 border-2 border-purple-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <Heart className="w-8 h-8 text-purple-600" />
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Donor</h3>
+              <p className="text-gray-600">
+                Make donations to support relief efforts and track your contributions
+              </p>
+            </Link>
+
+            <Link
+              href="/login"
+              className="group p-6 border-2 border-orange-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <HandHeart className="w-8 h-8 text-orange-600" />
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-orange-600 group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Relief Partner</h3>
+              <p className="text-gray-600">
+                Execute relief operations and manage assigned funds
+              </p>
+            </Link>
+          </div>
+          
+          <div className="mt-6 pt-6 border-t text-center">
+            <p className="text-gray-600 mb-4">New to ReliefChain?</p>
+            <Link
+              href="/register"
+              className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Create Account
             </Link>
           </div>
 

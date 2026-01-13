@@ -1,23 +1,35 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Development Rules - Allow all reads and writes
-    // ⚠️ WARNING: These rules allow public access. Only use for development!
-    // For production, implement proper authentication and authorization.
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
     
-    // Categories - public read and write for development
+    // Users collection - users can read their own profile, authenticated users can create/update
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || resource.data.role == 'admin');
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (request.auth.uid == userId || resource.data.role == 'admin');
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Categories - public read, authenticated write
     match /categories/{categoryId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
     
-    // Beneficiaries - public read and write for development
+    // Beneficiaries - authenticated read, authenticated write
     match /beneficiaries/{beneficiaryId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
     }
     
-    // Transactions - public read and write for development
+    // Transactions - public read (for audit trail), authenticated write
     match /transactions/{transactionId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
   }
 }
