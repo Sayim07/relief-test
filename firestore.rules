@@ -31,5 +31,40 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAuthenticated();
     }
+    
+    // Donations - authenticated read, authenticated write
+    match /donations/{donationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.donorId || resource.data.role == 'admin');
+      allow delete: if isAuthenticated() && resource.data.role == 'admin';
+    }
+    
+    // Relief Funds - authenticated read, admin write
+    match /reliefFunds/{fundId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Beneficiary Funds - authenticated read, admin write
+    match /beneficiaryFunds/{fundId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.beneficiaryId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Relief Partner Assignments - authenticated read, beneficiary/admin write
+    match /reliefPartnerAssignments/{assignmentId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.reliefPartnerId || request.auth.uid == resource.data.beneficiaryId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow create: if isAuthenticated() && (request.auth.uid == request.resource.data.assignedBy || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.reliefPartnerId || request.auth.uid == resource.data.beneficiaryId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+    
+    // Receipts - authenticated read, authenticated write
+    match /receipts/{receiptId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.payerId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow delete: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
   }
 }
