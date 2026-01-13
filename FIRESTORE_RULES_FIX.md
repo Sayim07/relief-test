@@ -9,7 +9,8 @@ This happens because Firestore security rules are blocking access.
 
 ### Option 1: Test Mode (Easiest - 30 days)
 
-1. Go to [Firebase Console - Firestore Rules](https://console.firebase.google.com/project/relief-db4ce/firestore/rules)
+1. Go to [Firebase Console - Firestore Rules](https://console.firebase.google.com/project/YOUR_PROJECT_ID/firestore/rules)
+   - Replace `YOUR_PROJECT_ID` with your actual Firebase project ID from `.env.local`
 2. Replace ALL rules with this (allows all reads/writes for 30 days):
 
 ```javascript
@@ -59,7 +60,8 @@ service cloud.firestore {
 
 If you haven't enabled Firestore yet:
 
-1. Go to [Firebase Console](https://console.firebase.google.com/project/relief-db4ce)
+1. Go to [Firebase Console](https://console.firebase.google.com/project/YOUR_PROJECT_ID)
+   - Replace `YOUR_PROJECT_ID` with your actual Firebase project ID
 2. Click **"Firestore Database"** in left sidebar
 3. Click **"Create database"**
 4. Select **"Start in test mode"**
@@ -114,4 +116,5 @@ service cloud.firestore {
 
 ## Direct Link to Rules
 
-[Click here to edit Firestore Rules](https://console.firebase.google.com/project/relief-db4ce/firestore/rules)
+[Click here to edit Firestore Rules](https://console.firebase.google.com/project/YOUR_PROJECT_ID/firestore/rules)
+   - Replace `YOUR_PROJECT_ID` with your actual Firebase project ID

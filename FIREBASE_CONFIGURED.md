@@ -4,7 +4,7 @@ Your Firebase project has been configured successfully!
 
 ## Configuration Details
 
-- **Project ID**: `relief-db4ce`
+- **Project ID**: Set in `.env.local` as `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
 - **Project Name**: ReliefChain
 - **Status**: ✅ Configured
 
@@ -12,7 +12,8 @@ Your Firebase project has been configured successfully!
 
 ### 1. Enable Firestore Database
 
-1. Go to [Firebase Console](https://console.firebase.google.com/project/relief-db4ce)
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+   - Select your project (project ID from `.env.local`)
 2. Click on **"Firestore Database"** in the left sidebar
 3. Click **"Create database"**
 4. Select **"Start in test mode"** (for development)
@@ -118,9 +119,10 @@ The following categories will be automatically created:
 
 ## Firebase Console Links
 
-- **Project Dashboard**: https://console.firebase.google.com/project/relief-db4ce
-- **Firestore Database**: https://console.firebase.google.com/project/relief-db4ce/firestore
-- **Project Settings**: https://console.firebase.google.com/project/relief-db4ce/settings/general
+- **Project Dashboard**: https://console.firebase.google.com/ (select your project)
+- **Firestore Database**: https://console.firebase.google.com/project/YOUR_PROJECT_ID/firestore
+- **Project Settings**: https://console.firebase.google.com/project/YOUR_PROJECT_ID/settings/general
+   - Replace `YOUR_PROJECT_ID` with your actual Firebase project ID
 
 ## Security Notes
 

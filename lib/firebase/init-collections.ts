@@ -70,7 +70,8 @@ export async function initializeCategories(): Promise<void> {
     if (error?.code === 'permission-denied') {
       console.error('❌ Firestore permission denied!');
       console.error('Please update Firestore security rules:');
-      console.error('1. Go to: https://console.firebase.google.com/project/relief-db4ce/firestore/rules');
+      const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'your-project-id';
+      console.error(`1. Go to: https://console.firebase.google.com/project/${projectId}/firestore/rules`);
       console.error('2. Copy rules from firestore.rules file or FIRESTORE_RULES_FIX.md');
       console.error('3. Click Publish');
     } else {
