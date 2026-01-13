@@ -49,6 +49,28 @@ export const beneficiaryFundService = {
   },
 
   /**
+   * Get all beneficiary funds
+   */
+  async getAll(): Promise<BeneficiaryFund[]> {
+    const q = query(
+      collection(db, 'beneficiaryFunds'),
+      orderBy('assignedAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        assignedAt: data.assignedAt.toDate(),
+        createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate(),
+      } as BeneficiaryFund;
+    });
+  },
+
+  /**
    * Get beneficiary funds by beneficiary ID
    */
   async getByBeneficiary(beneficiaryId: string): Promise<BeneficiaryFund[]> {

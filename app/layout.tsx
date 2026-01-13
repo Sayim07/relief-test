@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
+import ConditionalNavbar from "@/components/ConditionalNavbar";
 import FirebaseInitializer from "@/components/FirebaseInitializer";
 
 const geistSans = Geist({
@@ -30,7 +30,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <FirebaseInitializer />
-        <Navbar />
+        <ConditionalNavbar />
         <main className="min-h-screen bg-gray-50">
           {children}
         </main>
