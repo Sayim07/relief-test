@@ -1,65 +1,112 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { Shield, Users, Wallet, FileText, ArrowRight } from 'lucide-react';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <div className="flex justify-center mb-6">
+            <Shield className="w-20 h-20 text-blue-600" />
+          </div>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+            Emergency & Disaster Relief
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <h2 className="text-3xl font-semibold text-blue-600 mb-6">
+            Stablecoin Distribution System
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            A transparent, blockchain-based platform for rapid disaster relief fund distribution
+            with beneficiary whitelisting, category-based spending limits, and public audit trails.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-3 gap-6 mb-16">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <Users className="w-12 h-12 text-blue-600 mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Beneficiary Management</h3>
+            <p className="text-gray-600">
+              Whitelist verified beneficiaries and manage category-based spending limits
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <Wallet className="w-12 h-12 text-green-600 mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Secure Transfers</h3>
+            <p className="text-gray-600">
+              Direct stablecoin transfers with spending controls and real-time tracking
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <FileText className="w-12 h-12 text-purple-600 mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Public Audit Trail</h3>
+            <p className="text-gray-600">
+              Transparent transaction history visible to all stakeholders
+            </p>
+          </div>
         </div>
-      </main>
+
+        {/* Role Selection */}
+        <div className="bg-white rounded-lg shadow-xl p-8 max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-8">Select Your Role</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Link
+              href="/admin"
+              className="group p-6 border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <Users className="w-8 h-8 text-blue-600" />
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Admin Dashboard</h3>
+              <p className="text-gray-600">
+                Manage beneficiaries, distribute relief funds, and monitor transactions
+              </p>
+            </Link>
+
+            <Link
+              href="/beneficiary"
+              className="group p-6 border-2 border-green-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <Wallet className="w-8 h-8 text-green-600" />
+                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Beneficiary Dashboard</h3>
+              <p className="text-gray-600">
+                View your balance, spending limits, and make category-based transfers
+              </p>
+            </Link>
+          </div>
+
+          <div className="mt-6 pt-6 border-t">
+            <Link
+              href="/audit"
+              className="group flex items-center justify-between p-4 border-2 border-purple-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="w-6 h-6 text-purple-600" />
+                <div>
+                  <h3 className="font-semibold">Public Audit Trail</h3>
+                  <p className="text-sm text-gray-600">View all transactions on the blockchain</p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Info Section */}
+        <div className="mt-16 text-center text-gray-600">
+          <p className="mb-2">
+            <strong>Note:</strong> Connect your MetaMask wallet to interact with the system
+          </p>
+          <p className="text-sm">
+            This system uses blockchain technology for transparency and accountability in disaster relief
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
