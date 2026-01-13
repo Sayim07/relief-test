@@ -116,23 +116,51 @@ export const receiptService = {
    * Get receipts by payer ID
    */
   async getByPayer(payerId: string): Promise<Receipt[]> {
-    const q = query(
-      collection(db, 'receipts'),
-      where('payerId', '==', payerId),
-      orderBy('createdAt', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-        verifiedAt: data.verifiedAt?.toDate(),
-      } as Receipt;
-    });
+    try {
+      // Try with orderBy first (requires index)
+      const q = query(
+        collection(db, 'receipts'),
+        where('payerId', '==', payerId),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt.toDate(),
+          updatedAt: data.updatedAt.toDate(),
+          verifiedAt: data.verifiedAt?.toDate(),
+        } as Receipt;
+      });
+    } catch (error: any) {
+      // If index error, fallback to query without orderBy
+      if (error?.code === 'failed-precondition') {
+        console.warn('Index not found, using fallback query without orderBy');
+        const q = query(
+          collection(db, 'receipts'),
+          where('payerId', '==', payerId)
+        );
+        const querySnapshot = await getDocs(q);
+        
+        const receipts = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+            verifiedAt: data.verifiedAt?.toDate(),
+          } as Receipt;
+        });
+        
+        // Sort manually
+        return receipts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
+      throw error;
+    }
   },
 
   /**

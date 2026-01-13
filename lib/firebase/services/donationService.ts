@@ -53,24 +53,53 @@ export const donationService = {
    * Get donations by donor ID
    */
   async getByDonor(donorId: string): Promise<Donation[]> {
-    const q = query(
-      collection(db, 'donations'),
-      where('donorId', '==', donorId),
-      orderBy('createdAt', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-        verifiedAt: data.verifiedAt?.toDate(),
-        distributedAt: data.distributedAt?.toDate(),
-      } as Donation;
-    });
+    try {
+      // Try with orderBy first (requires index)
+      const q = query(
+        collection(db, 'donations'),
+        where('donorId', '==', donorId),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt.toDate(),
+          updatedAt: data.updatedAt.toDate(),
+          verifiedAt: data.verifiedAt?.toDate(),
+          distributedAt: data.distributedAt?.toDate(),
+        } as Donation;
+      });
+    } catch (error: any) {
+      // If index error, fallback to query without orderBy
+      if (error?.code === 'failed-precondition') {
+        console.warn('Index not found, using fallback query without orderBy');
+        const q = query(
+          collection(db, 'donations'),
+          where('donorId', '==', donorId)
+        );
+        const querySnapshot = await getDocs(q);
+        
+        const donations = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+            verifiedAt: data.verifiedAt?.toDate(),
+            distributedAt: data.distributedAt?.toDate(),
+          } as Donation;
+        });
+        
+        // Sort manually
+        return donations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
+      throw error;
+    }
   },
 
   /**

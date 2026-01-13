@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { switchToSepolia, isSepoliaNetwork } from './network';
 
 export const getProvider = () => {
   if (typeof window !== 'undefined' && window.ethereum) {
@@ -15,7 +16,7 @@ export const getSigner = async () => {
   return await provider.getSigner();
 };
 
-export const connectWallet = async () => {
+export const connectWallet = async (autoSwitchToSepolia: boolean = true) => {
   if (typeof window === 'undefined') {
     throw new Error('Window object is not available. Please use this in a browser environment.');
   }
@@ -32,6 +33,19 @@ export const connectWallet = async () => {
 
     if (!accounts || accounts.length === 0) {
       throw new Error('No accounts found. Please unlock your MetaMask wallet.');
+    }
+
+    // Check and switch to Sepolia if needed
+    if (autoSwitchToSepolia) {
+      const isSepolia = await isSepoliaNetwork();
+      if (!isSepolia) {
+        try {
+          await switchToSepolia();
+        } catch (switchError: any) {
+          console.warn('Failed to switch to Sepolia:', switchError.message);
+          // Continue anyway - user might want to use a different network
+        }
+      }
     }
 
     const provider = getProvider();

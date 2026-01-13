@@ -1,4 +1,5 @@
 import { AuthGuard } from '@/lib/middleware/withAuth';
+import DonorDashboard from '@/components/donor/DonorDashboard';
 
 export default function DonorPage() {
   return (
@@ -8,9 +9,7 @@ export default function DonorPage() {
           <h1 className="text-3xl font-bold text-gray-900">Donor Dashboard</h1>
           <p className="text-gray-600 mt-2">Make donations to support relief efforts</p>
         </div>
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <p className="text-gray-600">Donor dashboard coming soon...</p>
-        </div>
+        <DonorDashboard />
       </div>
     </AuthGuard>
   );

@@ -5,6 +5,10 @@ export const RELIEF_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_RELIEF_TOKEN_ADDRESS
 // Temporary ABI - will be replaced after contract compilation
 // This is a minimal ABI for development/testing
 const RELIEF_TOKEN_ABI = [
+  // ERC20 standard functions
+  'function transfer(address to, uint256 amount) returns (bool)',
+  'function balanceOf(address account) view returns (uint256)',
+  // Custom functions
   'function whitelistBeneficiary(address beneficiary, string[] categories, uint256[] limits)',
   'function removeBeneficiary(address beneficiary)',
   'function distributeRelief(address to, uint256 amount, string category)',
@@ -12,11 +16,12 @@ const RELIEF_TOKEN_ABI = [
   'function beneficiaries(address) view returns (bool isWhitelisted, uint256 totalReceived)',
   'function getCategorySpending(address beneficiary, string category) view returns (uint256 spent, uint256 limit)',
   'function getTransaction(uint256 txId) view returns (address from, address to, uint256 amount, string category, uint256 timestamp, string description)',
-  'function balanceOf(address account) view returns (uint256)',
   'function transactionCount() view returns (uint256)',
+  // Events
   'event BeneficiaryWhitelisted(address indexed beneficiary, string[] categories, uint256[] limits)',
   'event ReliefDistributed(address indexed to, uint256 amount, string category)',
   'event TransactionRecorded(uint256 indexed txId, address from, address to, uint256 amount, string category)',
+  'event Transfer(address indexed from, address indexed to, uint256 value)',
 ];
 
 export const getReliefTokenContract = (signer: ethers.JsonRpcSigner) => {
