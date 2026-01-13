@@ -66,8 +66,16 @@ export async function initializeCategories(): Promise<void> {
     }
 
     console.log('✅ Categories initialization complete!');
-  } catch (error) {
-    console.error('❌ Error initializing categories:', error);
+  } catch (error: any) {
+    if (error?.code === 'permission-denied') {
+      console.error('❌ Firestore permission denied!');
+      console.error('Please update Firestore security rules:');
+      console.error('1. Go to: https://console.firebase.google.com/project/relief-db4ce/firestore/rules');
+      console.error('2. Copy rules from firestore.rules file or FIRESTORE_RULES_FIX.md');
+      console.error('3. Click Publish');
+    } else {
+      console.error('❌ Error initializing categories:', error);
+    }
     throw error;
   }
 }

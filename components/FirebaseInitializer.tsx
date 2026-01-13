@@ -23,10 +23,17 @@ export default function FirebaseInitializer() {
 
         // Initialize categories if they don't exist
         await initializeCategories();
-      } catch (error) {
-        // Silently fail - Firebase might not be configured yet
-        // This is expected during initial setup
-        console.log('ℹ️ Firebase initialization skipped (configuration may be pending)');
+      } catch (error: any) {
+        // Log error details for debugging
+        if (error?.code === 'permission-denied') {
+          console.error('❌ Firestore permission denied. Please check security rules:');
+          console.error('   1. Go to Firebase Console → Firestore → Rules');
+          console.error('   2. Use development rules (see FIRESTORE_RULES_FIX.md)');
+          console.error('   3. Click Publish');
+        } else {
+          console.log('ℹ️ Firebase initialization skipped (configuration may be pending)');
+          console.log('Error:', error?.message || error);
+        }
       }
     };
 
