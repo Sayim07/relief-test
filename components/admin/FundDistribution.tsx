@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { reliefFundService, beneficiaryFundService, userService } from '@/lib/firebase/services/index';
 import { ReliefFund, BeneficiaryFund } from '@/lib/types/database';
+import { useWallet } from '@/hooks/useWallet';
+import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
 import { UserProfile } from '@/lib/types/user';
 import { DollarSign, Users, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
 
 export default function FundDistribution() {
   const { profile } = useAuth();
+  const { signer, isConnected } = useWallet();
   const [funds, setFunds] = useState<ReliefFund[]>([]);
   const [beneficiaries, setBeneficiaries] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,21 +61,48 @@ export default function FundDistribution() {
         throw new Error('Fund or beneficiary not found');
       }
 
-      const amountWei = amountNum * 1e18;
-
-      // Check if fund has enough remaining
-      if (parseFloat(fund.remainingAmount.toString()) < amountWei) {
-        alert('Insufficient funds in selected relief fund');
-        return;
+      if (!beneficiary.walletAddress) {
+        throw new Error('Beneficiary does not have a wallet address connected');
       }
 
-      // Create beneficiary fund assignment
+      const amountNum = parseFloat(amount);
+      const amountWei = BigInt(Math.floor(amountNum * 1e18));
+
+      // 1. On-chain processing if wallet is connected
+      let transactionHash: string | undefined;
+      if (signer && isConnected) {
+        const contract = getReliefTokenContract(signer);
+
+        // Check if whitelisted
+        const isWhitelisted = await reliefTokenFunctions.isBeneficiaryWhitelisted(contract, beneficiary.walletAddress);
+
+        if (!isWhitelisted) {
+          console.log('Whitelisting beneficiary on-chain...');
+          await reliefTokenFunctions.whitelistBeneficiary(
+            contract,
+            beneficiary.walletAddress,
+            [fund.category || 'general'],
+            [amountWei * BigInt(2)] // Give some buffer for limit
+          );
+        }
+
+        console.log('Distributing relief on-chain...');
+        const tx = await reliefTokenFunctions.distributeRelief(
+          contract,
+          beneficiary.walletAddress,
+          amountWei,
+          fund.category || 'general'
+        );
+        transactionHash = tx.hash;
+      }
+
+      // 2. Create beneficiary fund assignment in Firestore
       await beneficiaryFundService.create({
         beneficiaryId: beneficiary.uid,
         beneficiaryEmail: beneficiary.email,
         beneficiaryName: beneficiary.displayName,
         reliefFundId: fund.id,
-        amount: amountWei,
+        amount: Number(amountWei),
         amountDisplay: amount,
         currency: fund.currency,
         category: fund.category,
@@ -80,22 +110,23 @@ export default function FundDistribution() {
         assignedBy: profile.uid,
         assignedAt: new Date(),
         distributedAmount: 0,
-        remainingAmount: amountWei,
+        remainingAmount: Number(amountWei),
+        transactionHash: transactionHash,
       });
 
-      // Update relief fund
-      await reliefFundService.updateDistributedAmount(fund.id, amountWei);
+      // 3. Update relief fund in Firestore
+      await reliefFundService.updateDistributedAmount(fund.id, Number(amountWei));
 
       // Reset form
       setSelectedFund('');
       setSelectedBeneficiary('');
       setAmount('');
-      
+
       await loadData();
-      alert('Funds distributed successfully!');
-    } catch (error) {
+      alert('Funds distributed successfully both on-chain and in database!');
+    } catch (error: any) {
       console.error('Error distributing funds:', error);
-      alert('Failed to distribute funds');
+      alert(`Failed to distribute funds: ${error.message || 'Unknown error'}`);
     } finally {
       setDistributing(false);
     }

@@ -33,7 +33,7 @@ export const reliefFundService = {
   async get(id: string): Promise<ReliefFund | null> {
     const docRef = doc(db, 'reliefFunds', id);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       const data = docSnap.data();
       return {
@@ -52,7 +52,7 @@ export const reliefFundService = {
   async getAll(): Promise<ReliefFund[]> {
     const q = query(collection(db, 'reliefFunds'), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
@@ -68,22 +68,47 @@ export const reliefFundService = {
    * Get relief funds by status
    */
   async getByStatus(status: FundStatus): Promise<ReliefFund[]> {
-    const q = query(
-      collection(db, 'reliefFunds'),
-      where('status', '==', status),
-      orderBy('createdAt', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-      } as ReliefFund;
-    });
+    try {
+      const q = query(
+        collection(db, 'reliefFunds'),
+        where('status', '==', status),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+
+      return querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt.toDate(),
+          updatedAt: data.updatedAt.toDate(),
+        } as ReliefFund;
+      });
+    } catch (error: any) {
+      // Fallback if index is missing
+      if (error?.code === 'failed-precondition') {
+        console.warn('Firestore index missing for reliefFunds status + createdAt, falling back to memory sort');
+        const q = query(
+          collection(db, 'reliefFunds'),
+          where('status', '==', status)
+        );
+        const querySnapshot = await getDocs(q);
+        const funds = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+          } as ReliefFund;
+        });
+
+        // Sort in memory
+        return funds.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
+      throw error;
+    }
   },
 
   /**
@@ -110,10 +135,10 @@ export const reliefFundService = {
   async updateDistributedAmount(id: string, amount: number): Promise<void> {
     const fund = await this.get(id);
     if (!fund) throw new Error('Relief fund not found');
-    
+
     const newDistributedAmount = fund.distributedAmount + amount;
     const newRemainingAmount = fund.totalAmount - newDistributedAmount;
-    
+
     await this.update(id, {
       distributedAmount: newDistributedAmount,
       remainingAmount: newRemainingAmount,

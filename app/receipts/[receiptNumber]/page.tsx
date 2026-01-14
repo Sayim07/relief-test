@@ -87,8 +87,8 @@ export default function ReceiptVerificationPage({ params }: PageProps) {
               {isVerified
                 ? 'Receipt Verified'
                 : isRejected
-                ? 'Receipt Rejected'
-                : 'Receipt Pending Verification'}
+                  ? 'Receipt Rejected'
+                  : 'Receipt Pending Verification'}
             </h1>
             <p className="text-gray-600">
               Receipt Number: <span className="font-mono">{receipt.receiptNumber}</span>
@@ -106,13 +106,12 @@ export default function ReceiptVerificationPage({ params }: PageProps) {
           <div>
             <p className="text-sm text-gray-600 mb-1">Status</p>
             <span
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                isVerified
+              className={`px-3 py-1 rounded-full text-xs font-medium ${isVerified
                   ? 'bg-green-100 text-green-800'
                   : isRejected
-                  ? 'bg-red-100 text-red-800'
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}
             >
               {receipt.status.toUpperCase()}
             </span>
@@ -142,7 +141,20 @@ export default function ReceiptVerificationPage({ params }: PageProps) {
           {receipt.category && (
             <div>
               <p className="text-sm text-gray-600 mb-1">Category</p>
-              <p className="font-medium text-gray-900">{receipt.category}</p>
+              <p className="font-medium text-gray-900 capitalize">{receipt.category}</p>
+            </div>
+          )}
+          {receipt.transactionHash && (
+            <div className="md:col-span-2">
+              <p className="text-sm text-gray-600 mb-1">Blockchain Transaction</p>
+              <a
+                href={`https://sepolia.etherscan.io/tx/${receipt.transactionHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 font-mono text-sm break-all"
+              >
+                {receipt.transactionHash}
+              </a>
             </div>
           )}
         </div>

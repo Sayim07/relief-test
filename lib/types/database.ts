@@ -25,6 +25,7 @@ export type ReceiptStatus = 'pending' | 'verified' | 'rejected';
  */
 export interface Donation {
   id: string;
+  onChainId?: number; // Donation ID on the smart contract
   donorId: string; // User UID
   donorEmail: string;
   donorName?: string;
@@ -87,6 +88,7 @@ export interface BeneficiaryFund {
   assignedAt: Date;
   distributedAmount: number; // Amount distributed to relief partners
   remainingAmount: number; // Remaining to distribute
+  transactionHash?: string;
   createdAt: Date;
   updatedAt: Date;
   metadata?: {
@@ -104,6 +106,8 @@ export interface ReliefPartnerAssignment {
   reliefPartnerName?: string;
   beneficiaryFundId: string; // Source beneficiary fund
   beneficiaryId: string; // Beneficiary UID
+  beneficiaryEmail: string;
+  beneficiaryName?: string;
   amount: number; // Amount assigned
   amountDisplay: string;
   currency: string;
@@ -115,6 +119,7 @@ export interface ReliefPartnerAssignment {
   completedAt?: Date;
   spentAmount: number; // Amount spent
   remainingAmount: number; // Remaining amount
+  transactionHash?: string;
   receipts?: string[]; // Receipt IDs
   createdAt: Date;
   updatedAt: Date;

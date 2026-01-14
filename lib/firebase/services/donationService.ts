@@ -34,7 +34,7 @@ export const donationService = {
   async get(id: string): Promise<Donation | null> {
     const docRef = doc(db, 'donations', id);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       const data = docSnap.data();
       return {
@@ -61,7 +61,7 @@ export const donationService = {
         orderBy('createdAt', 'desc')
       );
       const querySnapshot = await getDocs(q);
-      
+
       return querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
@@ -82,7 +82,7 @@ export const donationService = {
           where('donorId', '==', donorId)
         );
         const querySnapshot = await getDocs(q);
-        
+
         const donations = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           return {
@@ -94,7 +94,7 @@ export const donationService = {
             distributedAt: data.distributedAt?.toDate(),
           } as Donation;
         });
-        
+
         // Sort manually
         return donations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       }
@@ -106,24 +106,49 @@ export const donationService = {
    * Get donations by status
    */
   async getByStatus(status: DonationStatus): Promise<Donation[]> {
-    const q = query(
-      collection(db, 'donations'),
-      where('status', '==', status),
-      orderBy('createdAt', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-        verifiedAt: data.verifiedAt?.toDate(),
-        distributedAt: data.distributedAt?.toDate(),
-      } as Donation;
-    });
+    try {
+      const q = query(
+        collection(db, 'donations'),
+        where('status', '==', status),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+
+      return querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt.toDate(),
+          updatedAt: data.updatedAt.toDate(),
+          verifiedAt: data.verifiedAt?.toDate(),
+          distributedAt: data.distributedAt?.toDate(),
+        } as Donation;
+      });
+    } catch (error: any) {
+      if (error?.code === 'failed-precondition') {
+        console.warn('Firestore index missing for donations status + createdAt, falling back to memory sort');
+        const q = query(
+          collection(db, 'donations'),
+          where('status', '==', status)
+        );
+        const querySnapshot = await getDocs(q);
+        const donations = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+            verifiedAt: data.verifiedAt?.toDate(),
+            distributedAt: data.distributedAt?.toDate(),
+          } as Donation;
+        });
+
+        return donations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      }
+      throw error;
+    }
   },
 
   /**
@@ -139,7 +164,7 @@ export const donationService = {
         limit(limitCount)
       );
       const querySnapshot = await getDocs(q);
-      
+
       return querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
@@ -161,7 +186,7 @@ export const donationService = {
           limit(limitCount)
         );
         const querySnapshot = await getDocs(q);
-        
+
         const donations = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           return {
@@ -173,7 +198,7 @@ export const donationService = {
             distributedAt: data.distributedAt?.toDate(),
           } as Donation;
         });
-        
+
         // Sort manually
         return donations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       }
@@ -191,7 +216,7 @@ export const donationService = {
         orderBy('createdAt', 'desc')
       );
       const querySnapshot = await getDocs(q);
-      
+
       return querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
@@ -208,7 +233,7 @@ export const donationService = {
       if (error?.code === 'failed-precondition') {
         console.warn('Index not found, using fallback query without orderBy');
         const querySnapshot = await getDocs(collection(db, 'donations'));
-        
+
         const donations = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           return {
@@ -220,7 +245,7 @@ export const donationService = {
             distributedAt: data.distributedAt?.toDate(),
           } as Donation;
         });
-        
+
         // Sort manually
         return donations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       }

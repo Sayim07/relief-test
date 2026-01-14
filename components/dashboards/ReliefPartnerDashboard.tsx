@@ -17,7 +17,10 @@ import {
   DollarSign,
   ShoppingCart,
   Receipt as ReceiptIcon,
+  ArrowRight,
 } from 'lucide-react';
+import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
+import { parseEther } from 'ethers';
 
 interface MetricsState {
   assignedFunds: string;
@@ -31,11 +34,12 @@ interface SpendingFormState {
   assignmentId: string;
   amount: string;
   description: string;
+  recipient: string;
 }
 
 export default function ReliefPartnerDashboard() {
   const { profile } = useAuth();
-  const { isConnected } = useWallet();
+  const { isConnected, signer } = useWallet();
 
   const [metrics, setMetrics] = useState<MetricsState>({
     assignedFunds: '0.00',
@@ -50,6 +54,7 @@ export default function ReliefPartnerDashboard() {
     assignmentId: '',
     amount: '',
     description: '',
+    recipient: '',
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -129,17 +134,43 @@ export default function ReliefPartnerDashboard() {
     try {
       setSubmitting(true);
 
-      // Create receipt tied to this assignment
+      let transactionHash: string | undefined;
+
+      // 1. On-chain transfer if wallet is connected
+      if (signer && isConnected) {
+        if (!spendingForm.recipient) {
+          alert('Please provide a recipient address for on-chain transfer');
+          setSubmitting(false);
+          return;
+        }
+
+        try {
+          console.log('Executing on-chain transfer...');
+          const contract = getReliefTokenContract(signer);
+          const amountWei = parseEther(amount);
+
+          const tx = await contract.transferWithCategory(
+            spendingForm.recipient,
+            amountWei,
+            assignment.category || 'general'
+          );
+          const receipt = await tx.wait();
+          transactionHash = receipt?.hash || tx.hash;
+        } catch (contractError: any) {
+          console.error('On-chain transfer failed:', contractError);
+          throw new Error(`On-chain transfer failed: ${contractError.message || 'Unknown error'}`);
+        }
+      }
+      // 2. Create receipt in Firestore
       const receiptId = await receiptService.create({
-        receiptNumber: '', // will be generated
         donationId: undefined,
         assignmentId: assignment.id,
         payerId: profile.uid,
         payerEmail: profile.email || '',
-        payerName: profile.displayName,
+        payerName: profile.displayName || '',
         recipientId: assignment.beneficiaryId,
-        recipientEmail: assignment.beneficiaryEmail,
-        recipientName: assignment.beneficiaryName,
+        recipientEmail: assignment.beneficiaryEmail || '',
+        recipientName: assignment.beneficiaryName || '',
         amount: numericAmount,
         amountDisplay: `$${numericAmount.toFixed(2)}`,
         currency: assignment.currency,
@@ -148,31 +179,29 @@ export default function ReliefPartnerDashboard() {
         status: 'pending',
         qrCodeData: '',
         qrCodeImageUrl: undefined,
-        transactionHash: undefined,
-        verifiedBy: undefined,
-        verifiedAt: undefined,
-        rejectedReason: undefined,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        transactionHash: transactionHash,
         metadata: {
           type: 'relief_partner_spend',
-        },
-      } as any);
+          assignmentId: assignment.id
+        }
+      });
 
-      // Update assignment totals
+      // 3. Update assignment totals in Firestore
       await reliefPartnerAssignmentService.updateSpentAmount(
         assignment.id,
         numericAmount
       );
 
+      // 4. Reset form
       setSpendingForm({
         assignmentId: '',
         amount: '',
         description: '',
+        recipient: '',
       });
 
       await loadDashboard();
-      alert('Spending submitted and receipt created successfully');
+      alert('Spending submitted and recorded successfully both on-chain and in database!');
     } catch (error: any) {
       console.error('Error submitting spending:', error);
       alert(error?.message || 'Failed to submit spending');
@@ -355,6 +384,23 @@ export default function ReliefPartnerDashboard() {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Recipient Address (Wallet)
+                </label>
+                <input
+                  type="text"
+                  value={spendingForm.recipient}
+                  onChange={(e) =>
+                    setSpendingForm((prev) => ({
+                      ...prev,
+                      recipient: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+                  placeholder="0x..."
+                />
+              </div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Description
                 </label>

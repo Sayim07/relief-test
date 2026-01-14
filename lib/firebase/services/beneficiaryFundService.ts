@@ -34,7 +34,7 @@ export const beneficiaryFundService = {
   async get(id: string): Promise<BeneficiaryFund | null> {
     const docRef = doc(db, 'beneficiaryFunds', id);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       const data = docSnap.data();
       return {
@@ -57,7 +57,7 @@ export const beneficiaryFundService = {
       orderBy('assignedAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
@@ -74,84 +74,14 @@ export const beneficiaryFundService = {
    * Get beneficiary funds by beneficiary ID
    */
   async getByBeneficiary(beneficiaryId: string): Promise<BeneficiaryFund[]> {
-    const q = query(
-      collection(db, 'beneficiaryFunds'),
-      where('beneficiaryId', '==', beneficiaryId),
-      orderBy('assignedAt', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        assignedAt: data.assignedAt.toDate(),
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-      } as BeneficiaryFund;
-    });
-  },
-
-  /**
-   * Get beneficiary funds by relief fund ID
-   */
-  async getByReliefFund(reliefFundId: string): Promise<BeneficiaryFund[]> {
-    const q = query(
-      collection(db, 'beneficiaryFunds'),
-      where('reliefFundId', '==', reliefFundId),
-      orderBy('assignedAt', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        assignedAt: data.assignedAt.toDate(),
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-      } as BeneficiaryFund;
-    });
-  },
-
-  /**
-   * Get beneficiary funds by status
-   */
-  async getByStatus(status: FundStatus): Promise<BeneficiaryFund[]> {
-    const q = query(
-      collection(db, 'beneficiaryFunds'),
-      where('status', '==', status),
-      orderBy('assignedAt', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        assignedAt: data.assignedAt.toDate(),
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-      } as BeneficiaryFund;
-    });
-  },
-
-  /**
-   * Get active beneficiary funds
-   */
-  async getActive(beneficiaryId?: string): Promise<BeneficiaryFund[]> {
-    if (beneficiaryId) {
+    try {
       const q = query(
         collection(db, 'beneficiaryFunds'),
         where('beneficiaryId', '==', beneficiaryId),
-        where('status', '==', 'active'),
         orderBy('assignedAt', 'desc')
       );
       const querySnapshot = await getDocs(q);
-      
+
       return querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
@@ -162,6 +92,169 @@ export const beneficiaryFundService = {
           updatedAt: data.updatedAt.toDate(),
         } as BeneficiaryFund;
       });
+    } catch (error: any) {
+      if (error?.code === 'failed-precondition') {
+        console.warn('Firestore index missing for beneficiaryFunds beneficiaryId + assignedAt, falling back to memory sort');
+        const q = query(
+          collection(db, 'beneficiaryFunds'),
+          where('beneficiaryId', '==', beneficiaryId)
+        );
+        const querySnapshot = await getDocs(q);
+        const funds = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            assignedAt: data.assignedAt.toDate(),
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+          } as BeneficiaryFund;
+        });
+        return funds.sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get beneficiary funds by relief fund ID
+   */
+  async getByReliefFund(reliefFundId: string): Promise<BeneficiaryFund[]> {
+    try {
+      const q = query(
+        collection(db, 'beneficiaryFunds'),
+        where('reliefFundId', '==', reliefFundId),
+        orderBy('assignedAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+
+      return querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          assignedAt: data.assignedAt.toDate(),
+          createdAt: data.createdAt.toDate(),
+          updatedAt: data.updatedAt.toDate(),
+        } as BeneficiaryFund;
+      });
+    } catch (error: any) {
+      if (error?.code === 'failed-precondition') {
+        console.warn('Firestore index missing for beneficiaryFunds reliefFundId + assignedAt, falling back to memory sort');
+        const q = query(
+          collection(db, 'beneficiaryFunds'),
+          where('reliefFundId', '==', reliefFundId)
+        );
+        const querySnapshot = await getDocs(q);
+        const funds = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            assignedAt: data.assignedAt.toDate(),
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+          } as BeneficiaryFund;
+        });
+        return funds.sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get beneficiary funds by status
+   */
+  async getByStatus(status: FundStatus): Promise<BeneficiaryFund[]> {
+    try {
+      const q = query(
+        collection(db, 'beneficiaryFunds'),
+        where('status', '==', status),
+        orderBy('assignedAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+
+      return querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          assignedAt: data.assignedAt.toDate(),
+          createdAt: data.createdAt.toDate(),
+          updatedAt: data.updatedAt.toDate(),
+        } as BeneficiaryFund;
+      });
+    } catch (error: any) {
+      if (error?.code === 'failed-precondition') {
+        console.warn('Firestore index missing for beneficiaryFunds status + assignedAt, falling back to memory sort');
+        const q = query(
+          collection(db, 'beneficiaryFunds'),
+          where('status', '==', status)
+        );
+        const querySnapshot = await getDocs(q);
+        const funds = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            assignedAt: data.assignedAt.toDate(),
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+          } as BeneficiaryFund;
+        });
+        return funds.sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get active beneficiary funds
+   */
+  async getActive(beneficiaryId?: string): Promise<BeneficiaryFund[]> {
+    if (beneficiaryId) {
+      try {
+        const q = query(
+          collection(db, 'beneficiaryFunds'),
+          where('beneficiaryId', '==', beneficiaryId),
+          where('status', '==', 'active'),
+          orderBy('assignedAt', 'desc')
+        );
+        const querySnapshot = await getDocs(q);
+
+        return querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            assignedAt: data.assignedAt.toDate(),
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+          } as BeneficiaryFund;
+        });
+      } catch (error: any) {
+        if (error?.code === 'failed-precondition') {
+          console.warn('Firestore index missing for beneficiaryFunds active status + beneficiaryId, falling back to memory sort');
+          const q = query(
+            collection(db, 'beneficiaryFunds'),
+            where('beneficiaryId', '==', beneficiaryId),
+            where('status', '==', 'active')
+          );
+          const querySnapshot = await getDocs(q);
+          const funds = querySnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              assignedAt: data.assignedAt.toDate(),
+              createdAt: data.createdAt.toDate(),
+              updatedAt: data.updatedAt.toDate(),
+            } as BeneficiaryFund;
+          });
+          return funds.sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
+        }
+        throw error;
+      }
     }
     return this.getByStatus('active');
   },
@@ -175,11 +268,11 @@ export const beneficiaryFundService = {
       ...updates,
       updatedAt: Timestamp.now(),
     };
-    
+
     if (updates.assignedAt) {
       updateData.assignedAt = Timestamp.fromDate(updates.assignedAt);
     }
-    
+
     await updateDoc(docRef, updateData);
   },
 
@@ -189,10 +282,10 @@ export const beneficiaryFundService = {
   async updateDistributedAmount(id: string, amount: number): Promise<void> {
     const fund = await this.get(id);
     if (!fund) throw new Error('Beneficiary fund not found');
-    
+
     const newDistributedAmount = fund.distributedAmount + amount;
     const newRemainingAmount = fund.amount - newDistributedAmount;
-    
+
     await this.update(id, {
       distributedAmount: newDistributedAmount,
       remainingAmount: newRemainingAmount,

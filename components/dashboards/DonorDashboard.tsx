@@ -16,11 +16,12 @@ import {
   Wallet,
   CheckCircle,
 } from 'lucide-react';
-import { formatEther } from 'ethers';
+import { formatEther, parseEther } from 'ethers';
+import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
 
 export default function DonorDashboard() {
   const { profile } = useAuth();
-  const { address, provider, isConnected } = useWallet();
+  const { address, provider, isConnected, signer } = useWallet();
   const [metrics, setMetrics] = useState({
     totalDonated: '0.00',
     activeCampaigns: 0,
@@ -92,8 +93,44 @@ export default function DonorDashboard() {
     if (!profile) throw new Error('User not authenticated');
 
     try {
-      // Create donation record
+      // Record on-chain metadata if wallet is connected
+      let onChainId: number | undefined;
+      if (signer && isConnected) {
+        try {
+          const contract = getReliefTokenContract(signer);
+          const amountWei = parseEther(data.amount);
+
+          const receipt = await reliefTokenFunctions.donate(
+            contract,
+            amountWei,
+            data.category || 'general',
+            data.description || 'Donation via ReliefChain',
+            data.transactionHash
+          );
+
+          // Extract donationId from logs
+          if (receipt && receipt.logs) {
+            for (const log of receipt.logs) {
+              try {
+                const parsedLog = contract.interface.parseLog(log);
+                if (parsedLog && parsedLog.name === 'DonationRecorded') {
+                  onChainId = Number(parsedLog.args.donationId);
+                  break;
+                }
+              } catch (e) {
+                // Ignore logs that don't belong to this contract or can't be parsed
+              }
+            }
+          }
+        } catch (contractError) {
+          console.error('Failed to record metadata on-chain:', contractError);
+          // Continue to Firestore even if metadata recording fails for better UX
+        }
+      }
+
+      // Create donation record in Firestore
       const donationId = await donationService.create({
+        onChainId,
         donorId: profile.uid,
         donorEmail: profile.email,
         donorName: profile.displayName,

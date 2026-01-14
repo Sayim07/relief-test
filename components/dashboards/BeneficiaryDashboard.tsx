@@ -25,6 +25,7 @@ import {
   ArrowRightCircle,
 } from 'lucide-react';
 import { formatEther } from 'ethers';
+import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
 
 interface MetricsState {
   fundsReceived: string;
@@ -45,7 +46,7 @@ interface AssignmentFormState {
 
 export default function BeneficiaryDashboard() {
   const { profile } = useAuth();
-  const { address, provider, isConnected } = useWallet();
+  const { address, provider, isConnected, signer } = useWallet();
 
   const [metrics, setMetrics] = useState<MetricsState>({
     fundsReceived: '0.00',
@@ -187,6 +188,40 @@ export default function BeneficiaryDashboard() {
     try {
       setSubmitting(true);
 
+      // 1. On-chain assignment if wallet is connected
+      let transactionHash: string | undefined;
+      if (signer && isConnected && address) {
+        if (!selectedPartner.walletAddress) {
+          throw new Error('Selected relief partner does not have a wallet address connected');
+        }
+
+        try {
+          console.log('Assigning relief partner on-chain...');
+          const contract = getReliefTokenContract(signer);
+          const amountWei = BigInt(Math.floor(numericAmount * 1e18));
+
+          // 1a. Assign the partner
+          await reliefTokenFunctions.assignReliefPartner(
+            contract,
+            address, // beneficiary
+            selectedPartner.walletAddress // relief partner
+          );
+
+          // 1b. Transfer the assigned tokens to the partner
+          console.log('Transferring tokens to relief partner on-chain...');
+          const tx = await contract.transfer(selectedPartner.walletAddress, amountWei);
+          const receipt = await tx.wait();
+          transactionHash = receipt?.hash || tx.hash;
+
+        } catch (contractError: any) {
+          console.error('Failed on-chain assignment operations:', contractError);
+          // If the reason is "already assigned", we might still want to try the transfer if balance allows
+          if (!contractError?.message?.includes('already assigned')) {
+            throw new Error(`On-chain operation failed: ${contractError.message || 'Unknown error'}`);
+          }
+        }
+      }
+
       const now = new Date();
 
       await reliefPartnerAssignmentService.create({
@@ -195,6 +230,8 @@ export default function BeneficiaryDashboard() {
         reliefPartnerName: selectedPartner.displayName || selectedPartner.email,
         beneficiaryFundId,
         beneficiaryId: profile.uid,
+        beneficiaryEmail: profile.email || '',
+        beneficiaryName: profile.displayName || undefined,
         amount: numericAmount,
         amountDisplay: `$${numericAmount.toFixed(2)}`,
         currency: selectedFund.currency,
@@ -206,6 +243,7 @@ export default function BeneficiaryDashboard() {
         completedAt: undefined,
         spentAmount: 0,
         remainingAmount: numericAmount,
+        transactionHash: transactionHash,
         receipts: [],
         metadata: {},
       });
@@ -332,7 +370,7 @@ export default function BeneficiaryDashboard() {
               <option value="">Select a fund...</option>
               {beneficiaryFunds.map((fund) => (
                 <option key={fund.id} value={fund.id}>
-                  {fund.name || fund.id} — Remaining: {fund.remainingAmount.toFixed(2)} {fund.currency}
+                  {fund.category || 'General Fund'} — Remaining: {fund.remainingAmount.toFixed(2)} {fund.currency}
                 </option>
               ))}
             </select>

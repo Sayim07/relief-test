@@ -4,10 +4,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { donationService, receiptService } from '@/lib/firebase/services/index';
 import { Donation, Receipt } from '@/lib/types/database';
+import { useWallet } from '@/hooks/useWallet';
+import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
 import { CheckCircle, XCircle, Clock, Eye, Loader2, AlertCircle, QrCode } from 'lucide-react';
 
 export default function DonationVerification() {
   const { profile } = useAuth();
+  const { signer, isConnected } = useWallet();
   const [pendingDonations, setPendingDonations] = useState<Donation[]>([]);
   const [allDonations, setAllDonations] = useState<Donation[]>([]);
   const [donationReceipts, setDonationReceipts] = useState<Record<string, Receipt>>({});
@@ -25,18 +28,18 @@ export default function DonationVerification() {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('Loading donations...');
-      
+
       // Load all donations first to see what we have
       const all = await donationService.getAll().catch(err => {
         console.error('Error loading all donations:', err);
         return [];
       });
-      
+
       console.log('Total donations found:', all.length);
       setAllDonations(all);
-      
+
       // Filter pending donations
       const pending = all.filter(d => d.status === 'pending');
       console.log('Pending donations:', pending.length);
@@ -45,7 +48,7 @@ export default function DonationVerification() {
       // Load receipts for all donations
       const receiptsMap: Record<string, Receipt> = {};
       const donationsToProcess = showAll ? all : pending;
-      
+
       for (const donation of donationsToProcess) {
         if (donation.id) {
           try {
@@ -72,11 +75,29 @@ export default function DonationVerification() {
 
     setProcessing(donationId);
     try {
+      // 1. Verify on-chain if possible
+      const donation = pendingDonations.find(d => d.id === donationId) || allDonations.find(d => d.id === donationId);
+      if (donation && donation.onChainId !== undefined && signer && isConnected) {
+        try {
+          const contract = getReliefTokenContract(signer);
+          await reliefTokenFunctions.verifyDonation(contract, donation.onChainId);
+        } catch (contractError: any) {
+          console.error('Failed to verify on-chain:', contractError);
+          // If the reason is "already verified" or similar, we might want to continue
+          if (contractError?.message?.includes('already verified')) {
+            console.log('Donation already verified on-chain, proceeding with Firestore update.');
+          } else {
+            throw new Error(`On-chain verification failed: ${contractError.message || 'Unknown error'}`);
+          }
+        }
+      }
+
+      // 2. Update Firestore
       await donationService.verify(donationId, profile.uid);
       await loadPendingDonations();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error verifying donation:', error);
-      alert('Failed to verify donation');
+      alert(`Failed to verify donation: ${error.message || 'Unknown error'}`);
     } finally {
       setProcessing(null);
     }
@@ -145,7 +166,7 @@ export default function DonationVerification() {
 
       {(() => {
         const donationsToShow = showAll ? allDonations : pendingDonations;
-        
+
         if (donationsToShow.length === 0) {
           return (
             <div className="bg-white rounded-lg shadow-lg p-12 text-center">
@@ -154,29 +175,29 @@ export default function DonationVerification() {
                 {showAll ? 'No Donations Found' : 'All Clear!'}
               </h3>
               <p className="text-gray-600">
-                {showAll 
-                  ? 'No donations have been made yet.' 
+                {showAll
+                  ? 'No donations have been made yet.'
                   : 'No pending donations to verify.'}
               </p>
               {allDonations.length > 0 && !showAll && (
                 <p className="text-sm text-gray-500 mt-2">
-                  Total donations: {allDonations.length} | 
-                  Pending: {pendingDonations.length} | 
+                  Total donations: {allDonations.length} |
+                  Pending: {pendingDonations.length} |
                   Verified: {allDonations.filter(d => d.status === 'verified').length}
                 </p>
               )}
             </div>
           );
         }
-        
+
         return (
           <div className="space-y-4">
             {showAll && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  Showing all donations ({allDonations.length} total). 
-                  Pending: {pendingDonations.length} | 
-                  Verified: {allDonations.filter(d => d.status === 'verified').length} | 
+                  Showing all donations ({allDonations.length} total).
+                  Pending: {pendingDonations.length} |
+                  Verified: {allDonations.filter(d => d.status === 'verified').length} |
                   Rejected: {allDonations.filter(d => d.status === 'rejected').length}
                 </p>
               </div>
@@ -193,12 +214,11 @@ export default function DonationVerification() {
                       <h3 className="font-semibold text-lg text-gray-900">
                         {donation.amountDisplay} {donation.currency}
                       </h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        donation.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        donation.status === 'verified' ? 'bg-green-100 text-green-800' :
-                        donation.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${donation.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          donation.status === 'verified' ? 'bg-green-100 text-green-800' :
+                            donation.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                        }`}>
                         {donation.status.charAt(0).toUpperCase() + donation.status.slice(1)}
                       </span>
                     </div>
