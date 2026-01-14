@@ -1,24 +1,53 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWallet } from '@/hooks/useWallet';
-import { beneficiaryFundService, categoryService } from '@/lib/firebase/services/index';
+import {
+  beneficiaryFundService,
+  categoryService,
+  reliefPartnerAssignmentService,
+  userService,
+} from '@/lib/firebase/services/index';
+import type {
+  BeneficiaryFund,
+  ReliefPartnerAssignment,
+} from '@/lib/types/database';
+import type { UserProfile } from '@/lib/types/user';
 import MetricCard from '@/components/ui/MetricCard';
 import {
   Wallet,
-  TrendingDown,
   FileText,
   AlertCircle,
   DollarSign,
   ShoppingCart,
+  Users,
+  ArrowRightCircle,
 } from 'lucide-react';
 import { formatEther } from 'ethers';
+
+interface MetricsState {
+  fundsReceived: string;
+  remainingAllowance: string;
+  spendHistory: number;
+  categoryLimits: number;
+  walletBalance: string;
+  totalTransactions: number;
+}
+
+interface AssignmentFormState {
+  beneficiaryFundId: string;
+  reliefPartnerId: string;
+  amount: string;
+  category?: string;
+  purpose: string;
+}
 
 export default function BeneficiaryDashboard() {
   const { profile } = useAuth();
   const { address, provider, isConnected } = useWallet();
-  const [metrics, setMetrics] = useState({
+
+  const [metrics, setMetrics] = useState<MetricsState>({
     fundsReceived: '0.00',
     remainingAllowance: '0.00',
     spendHistory: 0,
@@ -26,15 +55,27 @@ export default function BeneficiaryDashboard() {
     walletBalance: '0.00',
     totalTransactions: 0,
   });
+  const [beneficiaryFunds, setBeneficiaryFunds] = useState<BeneficiaryFund[]>([]);
+  const [assignments, setAssignments] = useState<ReliefPartnerAssignment[]>([]);
+  const [reliefPartners, setReliefPartners] = useState<UserProfile[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [assignmentForm, setAssignmentForm] = useState<AssignmentFormState>({
+    beneficiaryFundId: '',
+    reliefPartnerId: '',
+    amount: '',
+    category: '',
+    purpose: '',
+  });
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (isConnected && address && profile?.uid) {
-      loadMetrics();
+      loadDashboard();
     }
   }, [isConnected, address, profile]);
 
-  const loadMetrics = async () => {
+  const loadDashboard = async () => {
     if (!profile?.uid) return;
 
     try {
@@ -51,34 +92,144 @@ export default function BeneficiaryDashboard() {
         }
       }
 
-      // Load beneficiary funds
-      const beneficiaryFunds = await beneficiaryFundService.getByBeneficiary(profile.uid).catch(() => []);
-      
+      const [beneficiaryFunds, categories, assignments, partners] = await Promise.all([
+        beneficiaryFundService.getByBeneficiary(profile.uid).catch(() => []),
+        categoryService.getAll().catch(() => []),
+        reliefPartnerAssignmentService.getByBeneficiary(profile.uid).catch(() => []),
+        userService.getByRole('relief_partner').catch(() => []),
+      ]);
+
       const totalReceived = beneficiaryFunds.reduce(
-        (sum, bf) => sum + parseFloat(bf.allocatedAmount.toString()) / 1e18,
+        (sum, bf) => sum + (typeof bf.amount === 'number' ? bf.amount : 0),
         0
       );
 
       const remaining = beneficiaryFunds.reduce(
-        (sum, bf) => sum + parseFloat(bf.remainingAmount.toString()) / 1e18,
+        (sum, bf) => sum + (typeof bf.remainingAmount === 'number' ? bf.remainingAmount : 0),
         0
       );
-
-      // Load categories
-      const categories = await categoryService.getAll().catch(() => []);
 
       setMetrics({
         fundsReceived: totalReceived.toFixed(2),
         remainingAllowance: remaining.toFixed(2),
-        spendHistory: beneficiaryFunds.length,
+        spendHistory: assignments.length,
         categoryLimits: categories.length,
         walletBalance: balance,
-        totalTransactions: beneficiaryFunds.length,
+        totalTransactions: assignments.length,
       });
+
+      setBeneficiaryFunds(beneficiaryFunds);
+      setAssignments(assignments);
+      setReliefPartners(partners);
+      setCategories(categories);
     } catch (error) {
-      console.error('Error loading metrics:', error);
+      console.error('Error loading beneficiary dashboard:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const partnerStats = useMemo(() => {
+    const stats: Record<
+      string,
+      {
+        partner: UserProfile | undefined;
+        totalAssigned: number;
+        totalSpent: number;
+        totalRemaining: number;
+        assignments: ReliefPartnerAssignment[];
+      }
+    > = {};
+
+    for (const assignment of assignments) {
+      const key = assignment.reliefPartnerId;
+      if (!stats[key]) {
+        stats[key] = {
+          partner: reliefPartners.find((p) => p.uid === key),
+          totalAssigned: 0,
+          totalSpent: 0,
+          totalRemaining: 0,
+          assignments: [],
+        };
+      }
+      stats[key].totalAssigned += assignment.amount || 0;
+      stats[key].totalSpent += assignment.spentAmount || 0;
+      stats[key].totalRemaining += assignment.remainingAmount || 0;
+      stats[key].assignments.push(assignment);
+    }
+
+    return Object.values(stats);
+  }, [assignments, reliefPartners]);
+
+  const handleCreateAssignment = async () => {
+    if (!profile?.uid) return;
+    const { beneficiaryFundId, reliefPartnerId, amount, category, purpose } = assignmentForm;
+
+    const selectedFund = beneficiaryFunds.find((bf) => bf.id === beneficiaryFundId);
+    const selectedPartner = reliefPartners.find((p) => p.uid === reliefPartnerId);
+
+    if (!selectedFund || !selectedPartner) {
+      alert('Please select a fund and a relief partner');
+      return;
+    }
+
+    const numericAmount = parseFloat(amount);
+    if (!numericAmount || numericAmount <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    if (numericAmount > selectedFund.remainingAmount) {
+      alert('Amount exceeds remaining beneficiary fund balance');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const now = new Date();
+
+      await reliefPartnerAssignmentService.create({
+        reliefPartnerId,
+        reliefPartnerEmail: selectedPartner.email,
+        reliefPartnerName: selectedPartner.displayName || selectedPartner.email,
+        beneficiaryFundId,
+        beneficiaryId: profile.uid,
+        amount: numericAmount,
+        amountDisplay: `$${numericAmount.toFixed(2)}`,
+        currency: selectedFund.currency,
+        category,
+        purpose: purpose || undefined,
+        status: 'active',
+        assignedBy: profile.uid,
+        assignedAt: now,
+        completedAt: undefined,
+        spentAmount: 0,
+        remainingAmount: numericAmount,
+        receipts: [],
+        metadata: {},
+      });
+
+      await beneficiaryFundService.update(selectedFund.id, {
+        distributedAmount: (selectedFund.distributedAmount || 0) + numericAmount,
+        remainingAmount: (selectedFund.remainingAmount || 0) - numericAmount,
+      });
+
+      setAssignmentForm({
+        beneficiaryFundId: '',
+        reliefPartnerId: '',
+        amount: '',
+        category: '',
+        purpose: '',
+      });
+
+      await loadDashboard();
+      alert('Relief partner assignment created successfully');
+    } catch (error: any) {
+      console.error('Error creating relief partner assignment:', error);
+      alert(error?.message || 'Failed to create relief partner assignment');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -105,7 +256,9 @@ export default function BeneficiaryDashboard() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Beneficiary Dashboard</h1>
-        <p className="text-gray-600 mt-2">View your funds, spending limits, and transaction history</p>
+        <p className="text-gray-600 mt-2">
+          View your funds, assign relief partners, and track spending.
+        </p>
       </div>
 
       {/* Metrics Grid */}
@@ -120,13 +273,13 @@ export default function BeneficiaryDashboard() {
           title="Remaining Allowance"
           value={`$${metrics.remainingAllowance}`}
           icon={Wallet}
-          subtitle="Available to spend"
+          subtitle="Available to allocate"
         />
         <MetricCard
-          title="Spend History"
+          title="Relief Partner Assignments"
           value={metrics.spendHistory}
           icon={ShoppingCart}
-          subtitle="Total transactions"
+          subtitle="Total assignments created"
         />
         <MetricCard
           title="Category Limits"
@@ -145,27 +298,234 @@ export default function BeneficiaryDashboard() {
           subtitle="Connected wallet"
         />
         <MetricCard
-          title="Total Transactions"
+          title="Total Partner Transactions"
           value={metrics.totalTransactions}
           icon={FileText}
-          subtitle="All time"
+          subtitle="Assignments & spends"
         />
       </div>
 
-      {/* Quick Actions */}
+      {/* Assign Funds to Relief Partner */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-            Spend Funds
-          </button>
-          <button className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
-            Request More Funds
-          </button>
-          <button className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
-            View Transaction History
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Assign Funds to Relief Partner</h2>
+            <p className="text-sm text-gray-600">
+              Allocate part of your beneficiary funds to trusted relief partners for execution.
+            </p>
+          </div>
+          <ArrowRightCircle className="w-6 h-6 text-blue-600" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Source Beneficiary Fund
+            </label>
+            <select
+              value={assignmentForm.beneficiaryFundId}
+              onChange={(e) =>
+                setAssignmentForm((prev) => ({ ...prev, beneficiaryFundId: e.target.value }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="">Select a fund...</option>
+              {beneficiaryFunds.map((fund) => (
+                <option key={fund.id} value={fund.id}>
+                  {fund.name || fund.id} — Remaining: {fund.remainingAmount.toFixed(2)} {fund.currency}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Relief Partner
+            </label>
+            <select
+              value={assignmentForm.reliefPartnerId}
+              onChange={(e) =>
+                setAssignmentForm((prev) => ({ ...prev, reliefPartnerId: e.target.value }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="">Select a partner...</option>
+              {reliefPartners.map((partner) => (
+                <option key={partner.uid} value={partner.uid}>
+                  {partner.displayName || partner.email} ({partner.organization || 'Individual'})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={assignmentForm.amount}
+              onChange={(e) =>
+                setAssignmentForm((prev) => ({ ...prev, amount: e.target.value }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              placeholder="Enter amount to assign"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category (optional)</label>
+            <select
+              value={assignmentForm.category || ''}
+              onChange={(e) =>
+                setAssignmentForm((prev) => ({ ...prev, category: e.target.value || undefined }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="">No specific category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Purpose / Notes (optional)
+          </label>
+          <textarea
+            rows={3}
+            value={assignmentForm.purpose}
+            onChange={(e) =>
+              setAssignmentForm((prev) => ({ ...prev, purpose: e.target.value }))
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            placeholder="Describe how the relief partner should use these funds..."
+          />
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={handleCreateAssignment}
+            disabled={submitting}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+          >
+            {submitting ? 'Assigning...' : 'Assign Funds to Partner'}
           </button>
         </div>
+      </div>
+
+      {/* Assigned Relief Partners & Spending Tracking */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb  -4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Assigned Relief Partners</h2>
+            <p className="text-sm text-gray-600">
+              Track how much each relief partner has been allocated and spent.
+            </p>
+          </div>
+          <Users className="w-6 h-6 text-blue-600" />
+        </div>
+
+        {partnerStats.length === 0 ? (
+          <p className="text-sm text-gray-600 mt-4">
+            No relief partners have been assigned yet. Use the form above to create your first
+            assignment.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            {partnerStats.map((ps) => (
+              <div
+                key={ps.partner?.uid || ps.assignments[0]?.reliefPartnerId}
+                className="border border-gray-200 rounded-lg p-4"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {ps.partner?.displayName || ps.partner?.email || 'Relief Partner'}
+                    </p>
+                    {ps.partner?.organization && (
+                      <p className="text-xs text-gray-600">{ps.partner.organization}</p>
+                    )}
+                    {ps.partner?.email && (
+                      <p className="text-xs text-gray-500">{ps.partner.email}</p>
+                    )}
+                  </div>
+                  <div className="text-right text-sm">
+                    <p className="text-gray-600">Total Assigned</p>
+                    <p className="font-semibold text-gray-900">
+                      ${ps.totalAssigned.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 text-sm">
+                  <div>
+                    <p className="text-gray-600">Spent</p>
+                    <p className="font-semibold text-green-700">
+                      ${ps.totalSpent.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Remaining</p>
+                    <p className="font-semibold text-orange-700">
+                      ${ps.totalRemaining.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Assignments</p>
+                    <p className="font-semibold text-gray-900">
+                      {ps.assignments.length}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 border-t border-gray-100 pt-3">
+                  <p className="text-xs font-medium text-gray-500 mb-2">
+                    Recent Assignments
+                  </p>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {ps.assignments.slice(0, 4).map((a) => (
+                      <div
+                        key={a.id}
+                        className="flex items-center justify-between text-xs bg-gray-50 rounded-md px-3 py-2"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-800">
+                            {a.purpose || 'General support'}
+                          </p>
+                          <p className="text-gray-500">
+                            Assigned:{' '}
+                            {a.assignedAt
+                              ? new Date(a.assignedAt).toLocaleDateString()
+                              : '—'}
+                            {a.category && ` • Category: ${a.category}`}
+                          </p>
+                        </div>
+                        <div className="text-right ml-3">
+                          <p className="font-semibold text-gray-900">
+                            ${a.amount.toFixed(2)}
+                          </p>
+                          <p className="text-gray-500 capitalize">
+                            {a.status}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    {ps.assignments.length > 4 && (
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        + {ps.assignments.length - 4} more assignments
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
