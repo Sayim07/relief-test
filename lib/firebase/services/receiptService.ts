@@ -44,11 +44,16 @@ export const receiptService = {
 
   /**
    * Create a new receipt
+   *
+   * Optionally accepts a verificationUrl that will be embedded into the QR payload.
    */
-  async create(receipt: Omit<Receipt, 'id' | 'receiptNumber' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  async create(
+    receipt: Omit<Receipt, 'id' | 'receiptNumber' | 'createdAt' | 'updatedAt'>,
+    verificationUrl?: string
+  ): Promise<string> {
     const receiptNumber = this.generateReceiptNumber();
-    
-    // Create QR code data
+
+    // Create QR code data (including optional verification URL)
     const tempReceipt: Receipt = {
       ...receipt,
       id: '', // Will be set after creation
@@ -56,10 +61,10 @@ export const receiptService = {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    
-    const qrData = this.createQRData(tempReceipt);
+
+    const qrData = this.createQRData(tempReceipt, verificationUrl);
     const qrCodeData = JSON.stringify(qrData);
-    
+
     const docRef = await addDoc(collection(db, 'receipts'), {
       ...receipt,
       receiptNumber,
@@ -67,7 +72,7 @@ export const receiptService = {
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
-    
+
     return docRef.id;
   },
 
