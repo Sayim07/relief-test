@@ -9,6 +9,7 @@ import { db } from '@/lib/firebase/config';
 import { getProvider } from '@/lib/web3/provider';
 import { getReliefTokenContractReadOnly } from '@/lib/contracts/reliefToken';
 import { ethers } from 'ethers';
+import PageLoader from '@/components/ui/PageLoader';
 
 interface Transaction {
   id: string;
@@ -38,22 +39,22 @@ export default function AuditPage() {
     const initializeAuditData = async () => {
       try {
         setLoading(true);
-        
+
         // Step 1: Load Firestore history
         const firestoreTxs = await loadFirestoreHistory();
-        
+
         // Step 2: Load blockchain events
         const blockchainTxs = await loadBlockchainHistory();
-        
+
         // Step 3: Merge and deduplicate
         const merged = mergeAndDeduplicateTransactions(firestoreTxs, blockchainTxs);
-        
+
         // Step 4: Update UI
         updateTransactions(merged);
-        
+
         // Step 5: Set up real-time listeners
         setupRealtimeListeners();
-        
+
         setLoading(false);
       } catch (error) {
         console.error('Error initializing audit data:', error);
@@ -189,7 +190,7 @@ export default function AuditPage() {
 
   const updateTransactions = (txs: Transaction[]) => {
     setTransactions(txs);
-    
+
     // Calculate stats
     let totalDonated = 0;
     let totalDistributed = 0;
@@ -362,14 +363,8 @@ export default function AuditPage() {
           </div>
 
           {/* Transactions Table */}
-          {loading ? (
-            <div className="bg-slate-800/50 rounded-xl border border-slate-600/50 p-12 text-center">
-              <div className="flex justify-center mb-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-              </div>
-              <p className="text-slate-400">Connecting to blockchain...</p>
-            </div>
-          ) : transactions.length === 0 ? (
+          {loading && <PageLoader />}
+          {!loading && transactions.length === 0 ? (
             <div className="bg-slate-800/50 rounded-xl border border-slate-600/50 p-12 text-center">
               <TrendingUp className="w-16 h-16 text-slate-600 mx-auto mb-4" />
               <p className="text-slate-400">
@@ -382,72 +377,72 @@ export default function AuditPage() {
                 Displaying <span className="text-blue-400 font-semibold">{transactions.length}</span> blockchain transactions • Auto-updating
               </div>
               <div className="bg-slate-800/50 border border-slate-600/50 rounded-xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-slate-900/50 border-b border-slate-600/50">
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                        Transaction Hash
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                        From
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                        To
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                        Amount
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                        Category
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                        Timestamp
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-600/30">
-                    {transactions.map((tx, idx) => (
-                      <tr
-                        key={tx.id || idx}
-                        className="hover:bg-slate-700/30 transition-colors border-slate-600/20"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="font-mono text-sm text-blue-400 hover:text-blue-300 cursor-pointer">
-                            {tx.txHash ? formatAddress(tx.txHash) : 'N/A'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="font-mono text-sm text-slate-300">{formatAddress(tx.from)}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="font-mono text-sm text-slate-300">{formatAddress(tx.to)}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="font-semibold text-white">
-                            ${formatAmount(tx.amount)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-3 py-1 bg-slate-700 text-slate-200 rounded-md text-xs font-medium">
-                            {tx.category || 'General'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(tx)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
-                          {formatDate(tx.timestamp)}
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-slate-900/50 border-b border-slate-600/50">
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                          Transaction Hash
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                          From
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                          To
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                          Category
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                          Timestamp
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-600/30">
+                      {transactions.map((tx, idx) => (
+                        <tr
+                          key={tx.id || idx}
+                          className="hover:bg-slate-700/30 transition-colors border-slate-600/20"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="font-mono text-sm text-blue-400 hover:text-blue-300 cursor-pointer">
+                              {tx.txHash ? formatAddress(tx.txHash) : 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="font-mono text-sm text-slate-300">{formatAddress(tx.from)}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="font-mono text-sm text-slate-300">{formatAddress(tx.to)}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="font-semibold text-white">
+                              ${formatAmount(tx.amount)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="px-3 py-1 bg-slate-700 text-slate-200 rounded-md text-xs font-medium">
+                              {tx.category || 'General'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {getStatusBadge(tx)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                            {formatDate(tx.timestamp)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
             </>
           )}
 

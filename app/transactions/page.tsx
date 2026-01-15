@@ -5,7 +5,8 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { donationService, receiptService } from '@/lib/firebase/services/index';
 import { useState, useEffect } from 'react';
-import { Receipt, ExternalLink, Loader2 } from 'lucide-react';
+import { Receipt, ExternalLink } from 'lucide-react';
+import PageLoader from '@/components/ui/PageLoader';
 
 export default function TransactionsPage() {
   const { profile } = useAuth();
@@ -42,15 +43,9 @@ export default function TransactionsPage() {
   };
 
   if (loading) {
-    return (
-      <AuthGuard>
-        <DashboardLayout>
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          </div>
-        </DashboardLayout>
-      </AuthGuard>
-    );
+    if (loading) {
+      return <PageLoader />;
+    }
   }
 
   return (

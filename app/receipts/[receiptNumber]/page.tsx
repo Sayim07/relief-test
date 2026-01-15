@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { receiptService } from '@/lib/firebase/services/receiptService';
 import type { Receipt } from '@/lib/types/database';
-import { CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import PageLoader from '@/components/ui/PageLoader';
 
 interface PageProps {
   params: { receiptNumber: string };
@@ -41,14 +42,7 @@ export default function ReceiptVerificationPage({ params }: PageProps) {
   }, [params.receiptNumber]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#060010]">
-        <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-8 flex flex-col items-center">
-          <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-4" />
-          <p className="text-gray-400">Verifying receipt...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (error || !receipt) {

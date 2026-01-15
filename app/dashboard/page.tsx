@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Loader2 } from 'lucide-react';
+import PageLoader from '@/components/ui/PageLoader';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -35,20 +35,10 @@ export default function DashboardPage() {
   }, [profile, loading, router]);
 
   if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        </div>
-      </DashboardLayout>
-    );
+    return <PageLoader />;
   }
 
   return (
-    <DashboardLayout>
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    </DashboardLayout>
+    <PageLoader />
   );
 }
