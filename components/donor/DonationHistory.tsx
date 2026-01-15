@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { donationService, receiptService } from '@/lib/firebase/services/index';
 import { Donation } from '@/lib/types/database';
 import { Receipt } from '@/lib/types/database';
-import { Calendar, DollarSign, FileText, Eye, Loader2, CheckCircle, Clock, XCircle, X } from 'lucide-react';
+import { Calendar, DollarSign, FileText, Eye, Loader2, CheckCircle, Clock, XCircle, X, Download } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export default function DonationHistory() {
   const { profile } = useAuth();
@@ -249,6 +251,7 @@ export default function DonationHistory() {
 
 function ReceiptModal({ receipt, onClose }: { receipt: Receipt; onClose: () => void }) {
   const [qrImage, setQrImage] = useState<string | null>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadQRCode();
@@ -265,41 +268,84 @@ function ReceiptModal({ receipt, onClose }: { receipt: Receipt; onClose: () => v
     }
   };
 
+  const handleDownloadReceipt = async () => {
+    if (!receiptRef.current) return;
+
+    try {
+      const element = receiptRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        backgroundColor: '#060010',
+        logging: false,
+      } as any);
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`donation-receipt-${receipt.receiptNumber}.pdf`);
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-[#060010] border border-[#392e4e] rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-white">Receipt Details</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-white">
-              <X className="w-6 h-6" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDownloadReceipt}
+                className="text-blue-400 hover:text-blue-300 p-2 hover:bg-blue-500/10 rounded-lg transition-colors"
+                title="Download PDF"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+              <button onClick={onClose} className="text-gray-400 hover:text-white p-2">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6" ref={receiptRef}>
             <div className="bg-[#0a0a1a] rounded-lg p-6 border border-[#392e4e]">
+              {/* Receipt Header for PDF */}
+              <div className="mb-6 text-center border-b border-[#392e4e] pb-4">
+                <h3 className="text-xl font-bold text-white mb-1">Donation Receipt</h3>
+                <p className="text-sm text-[#9ca3af]">Thank you for your support</p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p className="text-sm text-gray-400 mb-1">Receipt Number</p>
+                  <p className="text-sm text-[#9ca3af] mb-1">Receipt Number</p>
                   <p className="font-mono font-semibold text-white">{receipt.receiptNumber}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400 mb-1">Amount</p>
+                  <p className="text-sm text-[#9ca3af] mb-1">Amount</p>
                   <p className="font-semibold text-lg text-white">
                     {receipt.amountDisplay} {receipt.currency}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400 mb-1">Date</p>
+                  <p className="text-sm text-[#9ca3af] mb-1">Date</p>
                   <p className="text-white">
                     {new Date(receipt.createdAt).toLocaleDateString()} {new Date(receipt.createdAt).toLocaleTimeString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400 mb-1">Status</p>
-                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${receipt.status === 'verified' ? 'bg-green-100 text-green-800' :
-                    receipt.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
+                  <p className="text-sm text-[#9ca3af] mb-1">Status</p>
+                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${receipt.status === 'verified' ? 'bg-[#dcfce7] text-[#166534]' :
+                    receipt.status === 'pending' ? 'bg-[#fef9c3] text-[#854d0e]' :
+                      'bg-[#f3f4f6] text-[#1f2937]'
                     }`}>
                     {receipt.status.charAt(0).toUpperCase() + receipt.status.slice(1)}
                   </span>
@@ -308,24 +354,24 @@ function ReceiptModal({ receipt, onClose }: { receipt: Receipt; onClose: () => v
 
               {receipt.description && (
                 <div className="mt-4 pt-4 border-t border-[#392e4e]">
-                  <p className="text-sm text-gray-400 mb-1">Description</p>
+                  <p className="text-sm text-[#9ca3af] mb-1">Description</p>
                   <p className="text-white">{receipt.description}</p>
                 </div>
               )}
 
               {receipt.transactionHash && (
                 <div className="mt-4 pt-4 border-t border-[#392e4e]">
-                  <p className="text-sm text-gray-400 mb-1">Transaction Hash</p>
-                  <p className="font-mono text-sm text-gray-300 break-all">{receipt.transactionHash}</p>
+                  <p className="text-sm text-[#9ca3af] mb-1">Transaction Hash</p>
+                  <p className="font-mono text-sm text-[#d1d5db] break-all">{receipt.transactionHash}</p>
                 </div>
               )}
             </div>
 
             {qrImage && (
               <div className="bg-[#0a0a1a] border border-[#392e4e] rounded-lg p-6 text-center">
-                <p className="text-sm text-gray-600 mb-4">QR Code</p>
+                <p className="text-sm text-[#9ca3af] mb-4">QR Code</p>
                 <img src={qrImage} alt="Receipt QR Code" className="mx-auto bg-white p-2 rounded-lg" />
-                <p className="text-xs text-gray-500 mt-4">Scan to verify receipt</p>
+                <p className="text-xs text-[#6b7280] mt-4">Scan to verify receipt</p>
               </div>
             )}
           </div>
