@@ -1,150 +1,187 @@
+'use client';
+
 import Link from 'next/link';
-import { Shield, Users, Wallet, FileText, ArrowRight, Heart, HandHeart } from 'lucide-react';
+import { Shield, ArrowRight } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
+
+// Dynamically import the ShinyText component
+const ShinyText = dynamic(() => import('@/components/ShinyText'), {
+  ssr: false,
+});
+
+// Dynamically import the TextType component
+const TextType = dynamic(() => import('@/components/TextType'), {
+  ssr: false,
+});
+
+// Dynamically import the Hyperspeed component to avoid SSR issues
+const Hyperspeed = dynamic(() => import('@/components/Hyperspeed'), {
+  ssr: false,
+  loading: () => <div className="w-full h-screen bg-black" />,
+});
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <div className="flex justify-center mb-6">
-            <Shield className="w-20 h-20 text-blue-600" />
+    <div className="min-h-screen bg-black text-white selection:bg-blue-500/30">
+      {/* Top Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/40 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 group cursor-pointer">
+            <div className="relative">
+              <div className="absolute inset-0 bg-blue-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity"></div>
+              <Shield className="w-8 h-8 text-blue-500 relative" />
+            </div>
+            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">ReliefChain</span>
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Emergency & Disaster Relief
+          <Link
+            href="/auth"
+            className="px-6 py-2 text-gray-300 hover:text-white font-medium transition-all hover:bg-white/5 rounded-full border border-white/10"
+          >
+            Get Started
+          </Link>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+        {/* Hyperspeed background layer */}
+        <div className="absolute inset-0 z-0">
+          <Hyperspeed />
+        </div>
+
+        {/* Gradient overlays to ensure readability */}
+        <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none" />
+        <div className="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-transparent via-black/20 to-black/60 pointer-events-none" />
+
+        <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+          {/* Main Logo */}
+          <div className="mb-12 flex justify-center scale-110 sm:scale-125">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-blue-600 rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-all duration-1000 animate-pulse"></div>
+              <div className="relative bg-black/50 backdrop-blur-2xl p-8 rounded-3xl border border-white/10 shadow-2xl">
+                <Shield className="w-24 h-24 text-blue-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Main Headline */}
+          <h1 className="text-6xl sm:text-8xl font-black mb-6 tracking-tighter">
+            <ShinyText
+              text="ReliefChain"
+              disabled={false}
+              speed={3}
+              className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-gray-500 block"
+            />
           </h1>
-          <h2 className="text-3xl font-semibold text-blue-600 mb-6">
-            Stablecoin Distribution System
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            A transparent, blockchain-based platform for rapid disaster relief fund distribution
-            with beneficiary whitelisting, category-based spending limits, and public audit trails.
+
+          {/* Tagline with Typing Effect */}
+          <div className="h-[40px] sm:h-[48px] mb-8">
+            <TextType
+              text="Next-Gen Transparent Disaster Relief"
+              typingSpeed={70}
+              pauseDuration={3000}
+              showCursor={true}
+              cursorClassName="bg-blue-500/80"
+              className="text-2xl sm:text-3xl font-light text-blue-400/80 leading-relaxed tracking-wide"
+            />
+          </div>
+
+          {/* Subtitle */}
+          <p className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
+            Fast, transparent, and decentralized. Leveraging Web3 to ensure
+            every donation reaches those who need it most, instantly.
           </p>
-        </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-16">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <Users className="w-12 h-12 text-blue-600 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Beneficiary Management</h3>
-            <p className="text-gray-600">
-              Whitelist verified beneficiaries and manage category-based spending limits
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <Wallet className="w-12 h-12 text-green-600 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Secure Transfers</h3>
-            <p className="text-gray-600">
-              Direct stablecoin transfers with spending controls and real-time tracking
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <FileText className="w-12 h-12 text-purple-600 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Public Audit Trail</h3>
-            <p className="text-gray-600">
-              Transparent transaction history visible to all stakeholders
-            </p>
-          </div>
-        </div>
-
-        {/* Role Selection */}
-        <div className="bg-white rounded-lg shadow-xl p-8 max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-center mb-8">Select Your Role</h2>
-          <div className="grid md:grid-cols-2 gap-6">
+          {/* CTA Button */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <Link
-              href="/login"
-              className="group p-6 border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
+              href="/auth"
+              className="relative inline-flex items-center gap-3 px-10 py-5 bg-blue-600 text-white text-lg font-bold rounded-2xl hover:bg-blue-500 transition-all duration-500 group overflow-hidden shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-10px_rgba(37,99,235,0.7)]"
             >
-              <div className="flex items-center justify-between mb-4">
-                <Users className="w-8 h-8 text-blue-600" />
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Admin</h3>
-              <p className="text-gray-600">
-                Manage beneficiaries, distribute relief funds, and monitor transactions
-              </p>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer" />
+              Get Started
+              <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-500" />
             </Link>
 
-            <Link
-              href="/login"
-              className="group p-6 border-2 border-green-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <Wallet className="w-8 h-8 text-green-600" />
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Beneficiary</h3>
-              <p className="text-gray-600">
-                View your balance, spending limits, and make category-based transfers
-              </p>
-            </Link>
-
-            <Link
-              href="/login"
-              className="group p-6 border-2 border-purple-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <Heart className="w-8 h-8 text-purple-600" />
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Donor</h3>
-              <p className="text-gray-600">
-                Make donations to support relief efforts and track your contributions
-              </p>
-            </Link>
-
-            <Link
-              href="/login"
-              className="group p-6 border-2 border-orange-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <HandHeart className="w-8 h-8 text-orange-600" />
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-orange-600 group-hover:translate-x-1 transition-all" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Relief Partner</h3>
-              <p className="text-gray-600">
-                Execute relief operations and manage assigned funds
-              </p>
-            </Link>
+            <button className="px-10 py-5 text-lg font-semibold text-white/70 hover:text-white transition-colors border border-white/10 rounded-2xl hover:bg-white/5 backdrop-blur-sm">
+              How it works
+            </button>
           </div>
-          
-          <div className="mt-6 pt-6 border-t text-center">
-            <p className="text-gray-600 mb-4">New to ReliefChain?</p>
-            <Link
-              href="/register"
-              className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Create Account
-            </Link>
-          </div>
-
-          <div className="mt-6 pt-6 border-t">
-            <Link
-              href="/audit"
-              className="group flex items-center justify-between p-4 border-2 border-purple-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <FileText className="w-6 h-6 text-purple-600" />
-                <div>
-                  <h3 className="font-semibold">Public Audit Trail</h3>
-                  <p className="text-sm text-gray-600">View all transactions on the blockchain</p>
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Info Section */}
-        <div className="mt-16 text-center text-gray-600">
-          <p className="mb-2">
-            <strong>Note:</strong> Connect your MetaMask wallet to interact with the system
-          </p>
-          <p className="text-sm">
-            This system uses blockchain technology for transparency and accountability in disaster relief
-          </p>
         </div>
       </div>
+
+      {/* Features Section */}
+      <div className="py-32 px-4 sm:px-6 lg:px-8 bg-black relative">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-24">
+            <h2 className="text-4xl sm:text-6xl font-extrabold text-white mb-6 tracking-tight">
+              Powerful Transparency
+            </h2>
+            <p className="text-xl text-gray-500 max-w-2xl mx-auto font-light">
+              Built on industrial-grade blockchain technology for absolute accountability
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <Shield className="w-8 h-8 text-blue-500" />,
+                title: 'Immutable Ledger',
+                description: 'Every transaction is recorded permanently on the blockchain, providing a single source of truth.',
+              },
+              {
+                icon: '⚡',
+                title: 'Instant Aid',
+                description: 'Proprietary stablecoin infrastructure enables sub-second cross-border fund distribution.',
+              },
+              {
+                icon: '🌍',
+                title: 'Global Scale',
+                description: 'Decentralized nodes ensure the platform remains accessible even when local infrastructure fails.',
+              },
+            ].map((feature, idx) => (
+              <div
+                key={idx}
+                className="group relative p-10 rounded-3xl bg-white/5 border border-white/10 hover:border-blue-500/50 transition-all duration-700 hover:bg-white/[0.07]"
+              >
+                <div className="absolute inset-0 bg-blue-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-3xl mb-8 group-hover:scale-110 transition-transform duration-500 shadow-inner">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-4">{feature.title}</h3>
+                  <p className="text-gray-400 leading-relaxed font-light">{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="py-20 px-4 sm:px-6 lg:px-8 bg-black border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
+            <div className="flex items-center gap-3">
+              <Shield className="w-8 h-8 text-blue-500" />
+              <span className="text-2xl font-black tracking-tight">ReliefChain</span>
+            </div>
+            <div className="flex gap-8 text-gray-400 font-light">
+              <a href="#" className="hover:text-blue-400 transition-colors">Privacy</a>
+              <a href="#" className="hover:text-blue-400 transition-colors">Terms</a>
+              <a href="#" className="hover:text-blue-400 transition-colors">Security</a>
+            </div>
+          </div>
+          <div className="text-center pt-8 border-t border-white/5">
+            <p className="text-gray-500 font-light">
+              © 2026 ReliefChain. All rights reserved. Pioneering transparent disaster relief.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

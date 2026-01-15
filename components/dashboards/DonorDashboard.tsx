@@ -129,8 +129,7 @@ export default function DonorDashboard() {
       }
 
       // Create donation record in Firestore
-      const donationId = await donationService.create({
-        onChainId,
+      const donationRecord: any = {
         donorId: profile.uid,
         donorEmail: profile.email,
         donorName: profile.displayName,
@@ -141,7 +140,14 @@ export default function DonorDashboard() {
         description: data.description,
         status: 'pending',
         transactionHash: data.transactionHash,
-      });
+      };
+
+      // Only add onChainId if it was successfully set
+      if (onChainId !== undefined) {
+        donationRecord.onChainId = onChainId;
+      }
+
+      const donationId = await donationService.create(donationRecord);
 
       // Create receipt
       const receiptId = await receiptService.create({
