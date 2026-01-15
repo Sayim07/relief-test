@@ -26,7 +26,6 @@ const sidebarItems: SidebarItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'My Wallet', href: '/wallet', icon: Wallet },
   { label: 'Transactions', href: '/transactions', icon: Receipt },
-  { label: 'Beneficiaries', href: '/admin/beneficiaries', icon: Users, roles: ['admin'] },
   { label: 'Distributions', href: '/admin/distributions', icon: Send, roles: ['admin'] },
   { label: 'Requests', href: '/beneficiary/requests', icon: FileQuestion, roles: ['beneficiary'] },
   { label: 'Settings', href: '/settings', icon: Settings },
