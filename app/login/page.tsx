@@ -6,6 +6,7 @@ import LoginForm from '@/components/auth/LoginForm';
 import { UserRole } from '@/lib/types/user';
 import { Shield, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import PixelCard from '@/components/PixelCard';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,43 +49,50 @@ export default function LoginPage() {
   const roleInfo = roles.find(r => r.value === roleParam);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       {/* Animated background elements */}
-      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-      <div className="absolute top-40 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-900/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-20 right-10 w-72 h-72 bg-purple-900/20 rounded-full blur-[120px] pointer-events-none"></div>
 
       <div className="relative z-10 w-full max-w-md">
         {/* Back Button */}
         <button
           onClick={() => router.replace('/auth')}
-          className="mb-8 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
+          className="mb-8 flex items-center gap-2 text-white/60 hover:text-white transition-all font-medium hover:gap-3"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
 
         {/* Card */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8">
+        <PixelCard
+          variant="blue"
+          className="w-full h-auto min-h-[500px] bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-8 shadow-2xl overflow-visible"
+          gap={8}
+          speed={40}
+        >
           {/* Header */}
-          <div className="mb-8">
-            <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${getRoleColor(roleParam)} text-white flex items-center justify-center mb-4`}>
+          <div className="mb-8 relative z-20">
+            <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${getRoleColor(roleParam)} text-white flex items-center justify-center mb-4 shadow-lg shadow-blue-500/20`}>
               <Shield className="w-7 h-7" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Sign In as {roleInfo?.label}</h1>
-            <p className="text-gray-600 mt-2">Enter your credentials to continue</p>
+            <h1 className="text-3xl font-bold text-white tracking-tight">Sign In as {roleInfo?.label}</h1>
+            <p className="text-white/50 mt-2 font-medium">Enter your credentials to continue</p>
           </div>
 
           {/* Login Form */}
-          <LoginForm role={roleParam} />
+          <div className="relative z-20">
+            <LoginForm role={roleParam} />
+          </div>
 
           {/* Register Link */}
-          <p className="mt-6 text-center text-sm text-gray-600">
+          <p className="mt-8 text-center text-sm text-white/40 relative z-20">
             Don't have an account?{' '}
-            <Link href={`/register?role=${roleParam}`} className="text-blue-600 font-semibold hover:text-blue-700">
+            <Link href={`/register?role=${roleParam}`} className="text-blue-400 font-bold hover:text-blue-300 transition-colors">
               Register here
             </Link>
           </p>
-        </div>
+        </PixelCard>
       </div>
     </div>
   );
