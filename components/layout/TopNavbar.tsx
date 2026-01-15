@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWallet } from '@/hooks/useWallet';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Menu } from 'lucide-react';
 import { getCurrentChainId } from '@/lib/web3/network';
 
 function formatAddress(address: string): string {
@@ -15,7 +15,11 @@ function isSepoliaNetwork(chainId: number): boolean {
   return chainId === 11155111; // Sepolia chain ID
 }
 
-export default function TopNavbar() {
+interface TopNavbarProps {
+  onMenuClick?: () => void;
+}
+
+export default function TopNavbar({ onMenuClick }: TopNavbarProps) {
   const { profile, logout } = useAuth();
   const { address, isConnected } = useWallet();
   const [chainId, setChainId] = useState<number | null>(null);
@@ -69,8 +73,16 @@ export default function TopNavbar() {
     <nav className="sticky top-0 z-30 bg-white border-b border-gray-200 backdrop-blur-sm bg-white/95">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
-          {/* Left side - empty for now, can add breadcrumbs */}
-          <div className="flex-1"></div>
+          {/* Left side - Hamburger menu */}
+          <div className="flex-1 flex items-center">
+            <button
+              onClick={onMenuClick}
+              className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="w-6 h-6 text-gray-600" />
+            </button>
+          </div>
 
           {/* Right side - User info */}
           <div className="flex items-center gap-4">
@@ -78,8 +90,8 @@ export default function TopNavbar() {
             {isConnected && (
               <div className={`
                 px-3 py-1.5 rounded-lg text-xs font-medium border
-                ${isSepolia 
-                  ? 'bg-green-50 text-green-700 border-green-200' 
+                ${isSepolia
+                  ? 'bg-green-50 text-green-700 border-green-200'
                   : 'bg-yellow-50 text-yellow-700 border-yellow-200'
                 }
               `}>
