@@ -21,6 +21,11 @@ const Hyperspeed = dynamic(() => import('@/components/Hyperspeed'), {
   loading: () => <div className="w-full h-screen bg-black" />,
 });
 
+// Dynamically import LightRays
+const LightRays = dynamic(() => import('@/components/LightRays'), {
+  ssr: false,
+});
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-blue-500/30">
@@ -48,6 +53,18 @@ export default function Home() {
         {/* Hyperspeed background layer */}
         <div className="absolute inset-0 z-0">
           <Hyperspeed />
+        </div>
+
+        {/* LightRays effect */}
+        <div className="absolute inset-0 z-0">
+          <LightRays
+            raysColor="#3b82f6" // blue-500
+            raysSpeed={0.2}
+            lightSpread={0.2}
+            rayLength={3.0}
+            fadeDistance={2.0}
+            mouseInfluence={0.05}
+          />
         </div>
 
         {/* Gradient overlays to ensure readability */}
