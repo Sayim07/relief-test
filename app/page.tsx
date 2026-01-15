@@ -26,6 +26,11 @@ const LightRays = dynamic(() => import('@/components/LightRays'), {
   ssr: false,
 });
 
+// Dynamically import PixelBlast
+const PixelBlast = dynamic(() => import('@/components/PixelBlast'), {
+  ssr: false,
+});
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-blue-500/30">
@@ -64,6 +69,18 @@ export default function Home() {
             rayLength={3.0}
             fadeDistance={2.0}
             mouseInfluence={0.05}
+          />
+        </div>
+
+        {/* PixelBlast effect */}
+        <div className="absolute inset-0 z-0 opacity-50">
+          <PixelBlast
+            variant="circle"
+            pixelSize={8}
+            color="#3b82f6" // blue-500
+            patternDensity={1.2}
+            enableRipples={true}
+            rippleSpeed={1.5}
           />
         </div>
 
