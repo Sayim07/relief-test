@@ -28,7 +28,7 @@ export default function AdminAnalytics() {
   const loadAnalytics = async () => {
     try {
       setLoading(true);
-      
+
       const [allDonations, allFunds, allBeneficiaryFunds, allReceipts] = await Promise.all([
         donationService.getByStatus('verified').catch(() => []),
         reliefFundService.getAll().catch(() => []),
@@ -55,12 +55,12 @@ export default function AdminAnalytics() {
       });
 
       // Get recent items
-      const recent = [...allDonations, ...pending].sort((a, b) => 
+      const recent = [...allDonations, ...pending].sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ).slice(0, 5);
       setRecentDonations(recent);
 
-      const recentFundsList = allFunds.sort((a, b) => 
+      const recentFundsList = allFunds.sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ).slice(0, 5);
       setRecentFunds(recentFundsList);
@@ -82,92 +82,92 @@ export default function AdminAnalytics() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h2>
+      <h2 className="text-2xl font-bold text-white">Analytics Dashboard</h2>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-blue-500" />
             </div>
-            <TrendingUp className="w-5 h-5 text-green-600" />
+            <TrendingUp className="w-5 h-5 text-green-500" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">
+          <h3 className="text-2xl font-bold text-white mb-1">
             ${stats.totalAmount.toFixed(2)}
           </h3>
-          <p className="text-sm text-gray-600">Total Donations</p>
+          <p className="text-sm text-gray-400">Total Donations</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 bg-green-900/30 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-green-500" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">
+          <h3 className="text-2xl font-bold text-white mb-1">
             {stats.verifiedDonations}
           </h3>
-          <p className="text-sm text-gray-600">Verified Donations</p>
+          <p className="text-sm text-gray-400">Verified Donations</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-yellow-600" />
+            <div className="w-12 h-12 bg-yellow-900/30 rounded-lg flex items-center justify-center">
+              <Clock className="w-6 h-6 text-yellow-500" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">
+          <h3 className="text-2xl font-bold text-white mb-1">
             {stats.pendingDonations}
           </h3>
-          <p className="text-sm text-gray-600">Pending Review</p>
+          <p className="text-sm text-gray-400">Pending Review</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-purple-600" />
+            <div className="w-12 h-12 bg-purple-900/30 rounded-lg flex items-center justify-center">
+              <Users className="w-6 h-6 text-purple-500" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">
+          <h3 className="text-2xl font-bold text-white mb-1">
             {stats.activeBeneficiaries}
           </h3>
-          <p className="text-sm text-gray-600">Active Beneficiaries</p>
+          <p className="text-sm text-gray-400">Active Beneficiaries</p>
         </div>
       </div>
 
       {/* Fund Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
           <div className="flex items-center gap-3 mb-4">
-            <DollarSign className="w-8 h-8 text-green-600" />
+            <DollarSign className="w-8 h-8 text-green-500" />
             <div>
-              <p className="text-sm text-gray-600">Total Funds</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-gray-400">Total Funds</p>
+              <p className="text-2xl font-bold text-white">
                 ${stats.totalFunds.toFixed(2)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
           <div className="flex items-center gap-3 mb-4">
-            <TrendingUp className="w-8 h-8 text-blue-600" />
+            <TrendingUp className="w-8 h-8 text-blue-500" />
             <div>
-              <p className="text-sm text-gray-600">Distributed</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-gray-400">Distributed</p>
+              <p className="text-2xl font-bold text-white">
                 ${stats.distributedFunds.toFixed(2)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
           <div className="flex items-center gap-3 mb-4">
-            <FileText className="w-8 h-8 text-purple-600" />
+            <FileText className="w-8 h-8 text-purple-500" />
             <div>
-              <p className="text-sm text-gray-600">Verified Receipts</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-gray-400">Verified Receipts</p>
+              <p className="text-2xl font-bold text-white">
                 {stats.totalReceipts}
               </p>
             </div>
@@ -177,27 +177,26 @@ export default function AdminAnalytics() {
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Donations</h3>
+        <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Recent Donations</h3>
           {recentDonations.length === 0 ? (
             <p className="text-gray-500 text-sm">No recent donations</p>
           ) : (
             <div className="space-y-3">
               {recentDonations.map((donation) => (
-                <div key={donation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={donation.id} className="flex items-center justify-between p-3 bg-[#0a0a1a] border border-[#392e4e] rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-white">
                       {donation.amountDisplay} {donation.currency}
                     </p>
                     <p className="text-xs text-gray-500">
                       {donation.donorName || donation.donorEmail}
                     </p>
                   </div>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    donation.status === 'verified' ? 'bg-green-100 text-green-800' :
-                    donation.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${donation.status === 'verified' ? 'bg-green-900/30 text-green-400' :
+                      donation.status === 'pending' ? 'bg-yellow-900/30 text-yellow-500' :
+                        'bg-red-900/30 text-red-400'
+                    }`}>
                     {donation.status}
                   </span>
                 </div>
@@ -206,24 +205,23 @@ export default function AdminAnalytics() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Funds</h3>
+        <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Recent Funds</h3>
           {recentFunds.length === 0 ? (
             <p className="text-gray-500 text-sm">No relief funds created</p>
           ) : (
             <div className="space-y-3">
               {recentFunds.map((fund) => (
-                <div key={fund.id} className="p-3 bg-gray-50 rounded-lg">
-                  <p className="font-medium text-gray-900 mb-1">{fund.name}</p>
+                <div key={fund.id} className="p-3 bg-[#0a0a1a] border border-[#392e4e] rounded-lg">
+                  <p className="font-medium text-white mb-1">{fund.name}</p>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">
+                    <span className="text-gray-400">
                       ${fund.totalAmountDisplay}
                     </span>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      fund.status === 'active' ? 'bg-green-100 text-green-800' :
-                      fund.status === 'distributed' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${fund.status === 'active' ? 'bg-green-900/30 text-green-400' :
+                        fund.status === 'distributed' ? 'bg-blue-900/30 text-blue-400' :
+                          'bg-gray-800 text-gray-300'
+                      }`}>
                       {fund.status}
                     </span>
                   </div>

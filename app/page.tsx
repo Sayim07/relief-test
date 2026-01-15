@@ -25,7 +25,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-blue-500/30">
       {/* Top Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/40 border-b border-white/5">
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-[#060010]/80 border-b border-[#392e4e]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 group cursor-pointer">
             <div className="relative">
@@ -36,7 +36,7 @@ export default function Home() {
           </div>
           <Link
             href="/auth"
-            className="px-6 py-2 text-gray-300 hover:text-white font-medium transition-all hover:bg-white/5 rounded-full border border-white/10"
+            className="px-6 py-2 text-gray-300 hover:text-white font-medium transition-all hover:bg-blue-900/20 rounded-full border border-[#392e4e]"
           >
             Get Started
           </Link>
@@ -59,7 +59,7 @@ export default function Home() {
           <div className="mb-12 flex justify-center scale-110 sm:scale-125">
             <div className="relative group">
               <div className="absolute inset-0 bg-blue-600 rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-all duration-1000 animate-pulse"></div>
-              <div className="relative bg-black/50 backdrop-blur-2xl p-8 rounded-3xl border border-white/10 shadow-2xl">
+              <div className="relative bg-[#0a0a1a]/50 backdrop-blur-2xl p-8 rounded-3xl border border-[#392e4e] shadow-2xl">
                 <Shield className="w-24 h-24 text-blue-500" />
               </div>
             </div>
@@ -104,16 +104,15 @@ export default function Home() {
               <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-500" />
             </Link>
 
-            <button className="px-10 py-5 text-lg font-semibold text-white/70 hover:text-white transition-colors border border-white/10 rounded-2xl hover:bg-white/5 backdrop-blur-sm">
+            <button className="px-10 py-5 text-lg font-semibold text-gray-300 hover:text-white transition-colors border border-[#392e4e] rounded-2xl hover:bg-blue-900/10 backdrop-blur-sm">
               How it works
             </button>
           </div>
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="py-32 px-4 sm:px-6 lg:px-8 bg-black relative">
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="py-32 px-4 sm:px-6 lg:px-8 bg-[#060010] relative">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#392e4e] to-transparent" />
 
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-24">
@@ -145,7 +144,7 @@ export default function Home() {
             ].map((feature, idx) => (
               <div
                 key={idx}
-                className="group relative p-10 rounded-3xl bg-white/5 border border-white/10 hover:border-blue-500/50 transition-all duration-700 hover:bg-white/[0.07]"
+                className="group relative p-10 rounded-3xl bg-[#0a0a1a]/50 border border-[#392e4e] hover:border-blue-500/50 transition-all duration-700 hover:bg-blue-900/10"
               >
                 <div className="absolute inset-0 bg-blue-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
                 <div className="relative">
@@ -162,7 +161,7 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="py-20 px-4 sm:px-6 lg:px-8 bg-black border-t border-white/5">
+      <footer className="py-20 px-4 sm:px-6 lg:px-8 bg-[#060010] border-t border-[#392e4e]">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
             <div className="flex items-center gap-3">
@@ -175,7 +174,7 @@ export default function Home() {
               <a href="#" className="hover:text-blue-400 transition-colors">Security</a>
             </div>
           </div>
-          <div className="text-center pt-8 border-t border-white/5">
+          <div className="text-center pt-8 border-t border-[#392e4e]">
             <p className="text-gray-500 font-light">
               © 2026 ReliefChain. All rights reserved. Pioneering transparent disaster relief.
             </p>

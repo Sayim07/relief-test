@@ -49,7 +49,7 @@ export default function LoginPage() {
   const roleInfo = roles.find(r => r.value === roleParam);
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#060010] flex items-center justify-center p-4">
       {/* Animated background elements */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-blue-900/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-20 right-10 w-72 h-72 bg-purple-900/20 rounded-full blur-[120px] pointer-events-none"></div>
@@ -67,7 +67,7 @@ export default function LoginPage() {
         {/* Card */}
         <PixelCard
           variant="blue"
-          className="w-full h-auto min-h-[500px] bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-8 shadow-2xl overflow-visible"
+          className="w-full h-auto min-h-[500px] bg-[#0a0a1a]/50 backdrop-blur-xl rounded-2xl border border-[#392e4e] p-8 shadow-2xl overflow-visible"
           gap={8}
           speed={40}
         >
@@ -88,7 +88,7 @@ export default function LoginPage() {
           {/* Register Link */}
           <p className="mt-8 text-center text-sm text-white/40 relative z-20">
             Don't have an account?{' '}
-            <Link href={`/register?role=${roleParam}`} className="text-blue-400 font-bold hover:text-blue-300 transition-colors">
+            <Link href={`/register?role=${roleParam}`} className="text-blue-500 font-bold hover:text-blue-400 transition-colors">
               Register here
             </Link>
           </p>

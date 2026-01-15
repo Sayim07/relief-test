@@ -36,30 +36,30 @@ export default function RegisterContent() {
 
   if (!selectedRole) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center p-4">
-        {/* Animated background elements */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+      <div className="min-h-screen bg-[#060010] flex items-center justify-center p-4">
+        {/* Animated background elements replaced with dark theme compatible ones if needed, or kept subtle */}
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-900/20 rounded-full mix-blend-screen filter blur-3xl opacity-10 animate-blob"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-purple-900/20 rounded-full mix-blend-screen filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
 
         <div className="relative z-10 w-full max-w-2xl">
           {/* Back Button */}
           <Link
             href="/"
-            className="mb-8 inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
+            className="mb-8 inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors font-medium"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
           </Link>
 
           {/* Card */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8">
+          <div className="bg-[#0a0a1a]/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-[#392e4e] p-8">
             {/* Header */}
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4">
-                <Shield className="w-12 h-12 text-blue-600" />
+                <Shield className="w-12 h-12 text-blue-500" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
-              <p className="text-gray-600 mt-2">Select your role to get started</p>
+              <h1 className="text-3xl font-bold text-white">Create Account</h1>
+              <p className="text-gray-400 mt-2">Select your role to get started</p>
             </div>
 
             {/* Role Selection Grid */}
@@ -68,18 +68,18 @@ export default function RegisterContent() {
                 <Link
                   key={role.value}
                   href={`/register?role=${role.value}`}
-                  className="p-5 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-left group"
+                  className="p-5 border border-[#392e4e] bg-[#1a1a2e] rounded-xl hover:border-blue-500 hover:bg-blue-900/20 transition-all text-left group"
                 >
-                  <h3 className="font-semibold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{role.label}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{role.description}</p>
+                  <h3 className="font-semibold text-lg text-white group-hover:text-blue-400 transition-colors">{role.label}</h3>
+                  <p className="text-sm text-gray-400 mt-1">{role.description}</p>
                 </Link>
               ))}
             </div>
 
             {/* Sign In Link */}
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-gray-400">
               Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 font-semibold hover:text-blue-700">
+              <Link href="/login" className="text-blue-500 font-semibold hover:text-blue-400">
                 Sign in here
               </Link>
             </p>
@@ -92,41 +92,41 @@ export default function RegisterContent() {
   const roleInfo = roles.find(r => r.value === selectedRole);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#060010] flex items-center justify-center p-4">
       {/* Animated background elements */}
-      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-      <div className="absolute top-40 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-900/20 rounded-full mix-blend-screen filter blur-3xl opacity-10 animate-blob"></div>
+      <div className="absolute top-40 right-10 w-72 h-72 bg-purple-900/20 rounded-full mix-blend-screen filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
 
       <div className="relative z-10 w-full max-w-md">
         {/* Back Button */}
         <Link
           href="/register"
-          className="mb-8 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
+          className="mb-8 flex items-center gap-2 text-gray-400 hover:text-white transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </Link>
 
         {/* Card */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-8">
+        <div className="bg-[#0a0a1a]/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-[#392e4e] p-8">
           {/* Header */}
           <div className="mb-8">
             <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${getRoleColor(selectedRole)} text-white flex items-center justify-center mb-4`}>
               <Shield className="w-7 h-7" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-white">
               Register as {roleInfo?.label}
             </h1>
-            <p className="text-gray-600 mt-2">Create your account to get started</p>
+            <p className="text-gray-400 mt-2">Create your account to get started</p>
           </div>
 
           {/* Register Form */}
           <RegisterForm role={selectedRole} />
 
           {/* Sign In Link */}
-          <p className="mt-6 text-center text-sm text-gray-600">
+          <p className="mt-6 text-center text-sm text-gray-400">
             Already have an account?{' '}
-            <Link href={`/login?role=${selectedRole}`} className="text-blue-600 font-semibold hover:text-blue-700">
+            <Link href={`/login?role=${selectedRole}`} className="text-blue-500 font-semibold hover:text-blue-400">
               Sign in here
             </Link>
           </p>

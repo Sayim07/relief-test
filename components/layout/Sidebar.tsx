@@ -59,7 +59,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Mobile/Hamburger overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 transition-opacity duration-300"
           onClick={onClose}
         />
       )}
@@ -67,24 +67,24 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar Drawer */}
       <aside
         className={`
-          fixed left-0 top-0 h-full bg-white border-r border-gray-200 z-50
+          fixed left-0 top-0 h-full bg-[#060010] border-r border-[#392e4e] z-50
           transition-all duration-300 ease-in-out transform
-          ${isOpen ? 'translate-x-0 w-64 shadow-2xl' : '-translate-x-full w-64'}
+          ${isOpen ? 'translate-x-0 w-64 shadow-[0_0_50px_rgba(0,0,0,0.5)]' : '-translate-x-full w-64'}
         `}
       >
         <div className="flex flex-col h-full">
           {/* Logo and close button */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-[#392e4e]">
             <Link href="/dashboard" className="flex items-center gap-2" onClick={onClose}>
-              <Shield className="w-8 h-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">ReliefChain</span>
+              <Shield className="w-8 h-8 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+              <span className="text-xl font-bold text-white tracking-tight">ReliefChain</span>
             </Link>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
               aria-label="Close menu"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5 text-gray-400" />
             </button>
           </div>
 
@@ -100,14 +100,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   href={item.href}
                   onClick={onClose}
                   className={`
-                    flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+                    flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                     ${active
-                      ? 'bg-blue-50 text-blue-600 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-blue-600/20 text-blue-400 font-medium border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)]'
+                      : 'text-gray-400 hover:bg-white/5 hover:text-white hover:border-transparent'
                     }
+                    border border-transparent
                   `}
                 >
-                  <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-blue-400' : 'text-gray-500 group-hover:text-white'}`} />
                   <span className="text-sm">{item.label}</span>
                 </Link>
               );
@@ -116,13 +117,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* User profile summary in sidebar if needed */}
           {profile && (
-            <div className="p-4 border-t border-gray-200 bg-gray-50/50">
+            <div className="p-4 border-t border-[#392e4e] bg-[#0a0a1a]/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                <div className="w-10 h-10 rounded-full bg-blue-900/30 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold">
                   {profile.displayName?.[0] || profile.email?.[0]?.toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-white truncate">
                     {profile.displayName || profile.email?.split('@')[0]}
                   </p>
                   <p className="text-xs text-gray-500 truncate capitalize">

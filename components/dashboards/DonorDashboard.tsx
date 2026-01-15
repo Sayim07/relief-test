@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWallet } from '@/hooks/useWallet';
 import { donationService, receiptService } from '@/lib/firebase/services/index';
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { formatEther, parseEther } from 'ethers';
 import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
+import { GlobalSpotlight } from '@/components/MagicBento';
 
 export default function DonorDashboard() {
   const { profile } = useAuth();
@@ -33,6 +34,9 @@ export default function DonorDashboard() {
   const [loading, setLoading] = useState(true);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationReceipt, setConfirmationReceipt] = useState<any>(null);
+
+  // MagicBento Ref
+  const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (profile?.uid) {
@@ -214,11 +218,15 @@ export default function DonorDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bento-section" ref={gridRef}>
+      <div className="fixed inset-0 pointer-events-none z-[100]">
+        <GlobalSpotlight gridRef={gridRef} />
+      </div>
+
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Donor Dashboard</h1>
-        <p className="text-gray-600 mt-2">Make donations and track your contribution history</p>
+        <h1 className="text-3xl font-bold text-white">Donor Dashboard</h1>
+        <p className="text-gray-400 mt-2">Make donations and track your contribution history</p>
       </div>
 
       {/* Metrics Grid */}
@@ -267,12 +275,12 @@ export default function DonorDashboard() {
 
       {/* Donation Form and History */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Make a Donation</h2>
+        <div className="bg-[#060010] rounded-xl shadow-sm border border-[#392e4e] p-6 text-white">
+          <h2 className="text-lg font-semibold text-white mb-4">Make a Donation</h2>
           <DonationForm onDonationSubmit={handleDonationSubmit} />
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Donation History</h2>
+        <div className="bg-[#060010] rounded-xl shadow-sm border border-[#392e4e] p-6 text-white">
+          <h2 className="text-lg font-semibold text-white mb-4">Donation History</h2>
           <DonationHistory />
         </div>
       </div>

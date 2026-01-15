@@ -6,11 +6,11 @@ import DonationVerification from './admin/DonationVerification';
 import FundManagement from './admin/FundManagement';
 import FundDistribution from './admin/FundDistribution';
 import AdminAnalytics from './admin/AdminAnalytics';
-import { 
-  CheckCircle, 
-  DollarSign, 
-  ArrowRight, 
-  BarChart3, 
+import {
+  CheckCircle,
+  DollarSign,
+  ArrowRight,
+  BarChart3,
   Users,
   Wallet
 } from 'lucide-react';
@@ -48,19 +48,18 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow-lg border-b">
-        <div className="flex border-b border-gray-200 overflow-x-auto">
+      <div className="bg-[#0a0a1a] rounded-lg shadow-lg border border-[#392e4e] mb-6">
+        <div className="flex border-b border-[#392e4e] overflow-x-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-4 font-medium text-sm transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                className={`flex items-center gap-2 px-6 py-4 font-medium text-sm transition-colors ${activeTab === tab.id
+                    ? 'border-b-2 border-blue-500 text-blue-500 bg-blue-900/20'
+                    : 'text-gray-400 hover:text-white hover:bg-[#1a1a2e]'
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 <span className="whitespace-nowrap">{tab.label}</span>
@@ -71,7 +70,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <div className="bg-[#0a0a1a] rounded-lg shadow-lg p-6 border border-[#392e4e]">
         {activeTab === 'verification' && <DonationVerification />}
         {activeTab === 'funds' && <FundManagement />}
         {activeTab === 'distribution' && <FundDistribution />}

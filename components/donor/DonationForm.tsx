@@ -66,7 +66,7 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
     try {
       // For testing: Generate a test transaction hash if wallet not connected
       let transactionHash: string;
-      
+
       if (signer && isConnected) {
         try {
           // Try to send real payment via MetaMask
@@ -85,7 +85,7 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
         // Test mode: Generate fake transaction hash for database/QR testing
         transactionHash = `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       }
-      
+
       await onDonationSubmit({
         amount: formData.amount,
         category: formData.category || undefined,
@@ -110,7 +110,7 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="amount" className="block text-sm font-medium text-gray-300 mb-2">
           Donation Amount (ETH) *
         </label>
         <div className="relative">
@@ -130,15 +130,15 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
                 setFormData({ ...formData, amount: value });
               }
             }}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+            className="w-full pl-10 pr-4 py-3 bg-[#0a0a1a] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-white text-lg placeholder-gray-500"
             placeholder="0.001"
           />
         </div>
-        <p className="mt-1 text-sm text-gray-500">Minimum: 0.001 ETH | Maximum: 1000 ETH</p>
+        <p className="mt-1 text-sm text-gray-400">Minimum: 0.001 ETH | Maximum: 1000 ETH</p>
       </div>
 
       <div>
-        <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="category" className="block text-sm font-medium text-gray-300 mb-2">
           Category (Optional)
         </label>
         {loadingCategories ? (
@@ -151,7 +151,7 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
             id="category"
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 bg-[#0a0a1a] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-white"
           >
             <option value="">Select a category (optional)</option>
             {categories.map((cat) => (
@@ -164,7 +164,7 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-2">
           Description (Optional)
         </label>
         <div className="relative">
@@ -174,20 +174,20 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
             rows={4}
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            className="w-full pl-10 pr-4 py-3 bg-[#0a0a1a] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-transparent resize-none text-white placeholder-gray-500"
             placeholder="Add a note about your donation..."
           />
         </div>
       </div>
 
       {!isConnected && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
           <div className="flex items-center gap-2 text-blue-800 mb-3">
             <AlertCircle className="w-5 h-5" />
             <span className="font-medium">Test Mode</span>
           </div>
-          <p className="text-sm text-blue-700 mb-3">
-            Wallet not connected. You can still test database and QR code generation. 
+          <p className="text-sm text-blue-300 mb-3">
+            Wallet not connected. You can still test database and QR code generation.
             Donations will be saved with a test transaction hash.
           </p>
           <button
@@ -212,7 +212,7 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
       )}
 
       {isConnected && address && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
           <div className="flex items-center gap-2 text-green-800">
             <Wallet className="w-5 h-5" />
             <span className="font-medium">Connected: {address.slice(0, 6)}...{address.slice(-4)}</span>

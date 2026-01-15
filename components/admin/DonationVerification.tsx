@@ -132,18 +132,18 @@ export default function DonationVerification() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Donation Verification</h2>
+        <h2 className="text-2xl font-bold text-white">Donation Verification</h2>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowAll(!showAll)}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 text-sm border border-[#392e4e] rounded-lg hover:bg-[#0a0a1a] text-gray-300"
           >
             {showAll ? 'Show Pending Only' : 'Show All Donations'}
           </button>
           <button
             onClick={loadPendingDonations}
             disabled={loading}
-            className="px-4 py-2 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm text-blue-400 hover:text-blue-300 disabled:opacity-50 flex items-center gap-2"
           >
             <Loader2 className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -152,8 +152,8 @@ export default function DonationVerification() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-red-800">
+        <div className="bg-red-900/30 border border-red-900/50 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-red-500">
             <AlertCircle className="w-5 h-5" />
             <div>
               <p className="font-medium">Error loading donations</p>
@@ -169,12 +169,12 @@ export default function DonationVerification() {
 
         if (donationsToShow.length === 0) {
           return (
-            <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-              <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <div className="bg-[#1a1a2e] rounded-lg shadow-lg p-12 text-center border border-[#392e4e]">
+              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">
                 {showAll ? 'No Donations Found' : 'All Clear!'}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-400">
                 {showAll
                   ? 'No donations have been made yet.'
                   : 'No pending donations to verify.'}
@@ -193,8 +193,8 @@ export default function DonationVerification() {
         return (
           <div className="space-y-4">
             {showAll && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
+              <div className="bg-blue-900/10 border border-blue-900/30 rounded-lg p-4">
+                <p className="text-sm text-blue-400">
                   Showing all donations ({allDonations.length} total).
                   Pending: {pendingDonations.length} |
                   Verified: {allDonations.filter(d => d.status === 'verified').length} |
@@ -205,19 +205,19 @@ export default function DonationVerification() {
             {donationsToShow.map((donation) => (
               <div
                 key={donation.id}
-                className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                className="bg-[#1a1a2e] border border-[#392e4e] rounded-lg p-6 hover:bg-[#0a0a1a] transition-colors"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <Clock className="w-5 h-5 text-yellow-600" />
-                      <h3 className="font-semibold text-lg text-gray-900">
+                      <Clock className="w-5 h-5 text-yellow-500" />
+                      <h3 className="font-semibold text-lg text-white">
                         {donation.amountDisplay} {donation.currency}
                       </h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${donation.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          donation.status === 'verified' ? 'bg-green-100 text-green-800' :
-                            donation.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100 text-gray-800'
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${donation.status === 'pending' ? 'bg-yellow-900/30 text-yellow-500' :
+                        donation.status === 'verified' ? 'bg-green-900/30 text-green-400' :
+                          donation.status === 'rejected' ? 'bg-red-900/30 text-red-400' :
+                            'bg-gray-800 text-gray-300'
                         }`}>
                         {donation.status.charAt(0).toUpperCase() + donation.status.slice(1)}
                       </span>
@@ -225,13 +225,13 @@ export default function DonationVerification() {
 
                     <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                       <div>
-                        <p className="text-gray-600 mb-1">Donor</p>
-                        <p className="font-medium text-gray-900">{donation.donorName || donation.donorEmail}</p>
+                        <p className="text-gray-400 mb-1">Donor</p>
+                        <p className="font-medium text-white">{donation.donorName || donation.donorEmail}</p>
                         <p className="text-xs text-gray-500 font-mono">{donation.donorId}</p>
                       </div>
                       <div>
-                        <p className="text-gray-600 mb-1">Date</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="text-gray-400 mb-1">Date</p>
+                        <p className="font-medium text-white">
                           {new Date(donation.createdAt).toLocaleDateString()}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -240,33 +240,33 @@ export default function DonationVerification() {
                       </div>
                       {donation.category && (
                         <div>
-                          <p className="text-gray-600 mb-1">Category</p>
-                          <p className="font-medium text-gray-900">{donation.category}</p>
+                          <p className="text-gray-400 mb-1">Category</p>
+                          <p className="font-medium text-white">{donation.category}</p>
                         </div>
                       )}
                       {donation.transactionHash && (
                         <div>
-                          <p className="text-gray-600 mb-1">Transaction Hash</p>
-                          <p className="font-mono text-xs text-gray-900 break-all">{donation.transactionHash}</p>
+                          <p className="text-gray-400 mb-1">Transaction Hash</p>
+                          <p className="font-mono text-xs text-white break-all">{donation.transactionHash}</p>
                         </div>
                       )}
                     </div>
 
                     {donation.description && (
                       <div className="mb-4">
-                        <p className="text-sm text-gray-600 mb-1">Description</p>
-                        <p className="text-gray-900">{donation.description}</p>
+                        <p className="text-sm text-gray-400 mb-1">Description</p>
+                        <p className="text-white">{donation.description}</p>
                       </div>
                     )}
 
                     {/* Receipt QR Code */}
                     {donationReceipts[donation.id] && (
-                      <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                      <div className="mb-4 p-4 bg-purple-900/20 border border-purple-900/50 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
-                          <QrCode className="w-5 h-5 text-purple-600" />
-                          <p className="text-sm font-medium text-purple-900">Donor Receipt QR Code</p>
+                          <QrCode className="w-5 h-5 text-purple-400" />
+                          <p className="text-sm font-medium text-purple-300">Donor Receipt QR Code</p>
                         </div>
-                        <p className="text-xs text-purple-700 mb-2">
+                        <p className="text-xs text-purple-400 mb-2">
                           Receipt Number: {donationReceipts[donation.id].receiptNumber}
                         </p>
                         <ReceiptQRCode receipt={donationReceipts[donation.id]} />
@@ -276,7 +276,7 @@ export default function DonationVerification() {
                     <div className="flex gap-3">
                       <button
                         onClick={() => setSelectedDonation(donation)}
-                        className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg text-sm"
+                        className="flex items-center gap-2 px-4 py-2 text-blue-400 hover:bg-blue-900/20 rounded-lg text-sm"
                       >
                         <Eye className="w-4 h-4" />
                         View Details
@@ -308,12 +308,12 @@ export default function DonationVerification() {
                         </>
                       )}
                       {donation.status === 'verified' && (
-                        <span className="px-4 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
+                        <span className="px-4 py-2 bg-green-900/30 text-green-400 rounded-lg text-sm font-medium">
                           ✓ Verified
                         </span>
                       )}
                       {donation.status === 'rejected' && (
-                        <span className="px-4 py-2 bg-red-100 text-red-800 rounded-lg text-sm font-medium">
+                        <span className="px-4 py-2 bg-red-900/30 text-red-400 rounded-lg text-sm font-medium">
                           ✗ Rejected
                         </span>
                       )}
@@ -366,7 +366,7 @@ function RejectButton({ donationId, onReject, processing }: { donationId: string
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Rejection reason..."
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="flex-1 px-3 py-2 bg-[#0a0a1a] border border-[#392e4e] rounded-lg text-white text-sm focus:ring-2 focus:ring-red-500"
           autoFocus
         />
         <button
@@ -382,7 +382,7 @@ function RejectButton({ donationId, onReject, processing }: { donationId: string
             setShowRejectForm(false);
             setReason('');
           }}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+          className="px-4 py-2 border border-[#392e4e] rounded-lg text-sm text-gray-300 hover:bg-[#0a0a1a]"
         >
           Cancel
         </button>
@@ -437,13 +437,13 @@ function ReceiptQRCode({ receipt }: { receipt: Receipt }) {
   }
 
   if (!qrImage) {
-    return <p className="text-xs text-gray-500">QR code not available</p>;
+    return <p className="text-xs text-gray-400">QR code not available</p>;
   }
 
   return (
     <div className="text-center">
-      <img src={qrImage} alt="Receipt QR Code" className="mx-auto max-w-[150px]" />
-      <p className="text-xs text-purple-600 mt-2">Scan to verify receipt</p>
+      <img src={qrImage} alt="Receipt QR Code" className="mx-auto max-w-[150px] bg-white p-2 rounded-lg" />
+      <p className="text-xs text-purple-400 mt-2">Scan to verify receipt</p>
     </div>
   );
 }
@@ -464,12 +464,12 @@ function DonationDetailModal({
   const [rejectReason, setRejectReason] = useState('');
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[#0a0a1a] border border-[#392e4e] rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Donation Details</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <h2 className="text-2xl font-bold text-white">Donation Details</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-white">
               <XCircle className="w-6 h-6" />
             </button>
           </div>
@@ -477,58 +477,58 @@ function DonationDetailModal({
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Amount</p>
-                <p className="font-semibold text-lg text-gray-900">
+                <p className="text-sm text-gray-400 mb-1">Amount</p>
+                <p className="font-semibold text-lg text-white">
                   {donation.amountDisplay} {donation.currency}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Status</p>
-                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                <p className="text-sm text-gray-400 mb-1">Status</p>
+                <span className="px-3 py-1 bg-yellow-900/30 text-yellow-500 rounded-full text-sm font-medium">
                   {donation.status}
                 </span>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Donor</p>
-                <p className="font-medium text-gray-900">{donation.donorName || donation.donorEmail}</p>
+                <p className="text-sm text-gray-400 mb-1">Donor</p>
+                <p className="font-medium text-white">{donation.donorName || donation.donorEmail}</p>
                 <p className="text-xs text-gray-500 font-mono">{donation.donorId}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Date</p>
-                <p className="font-medium text-gray-900">
+                <p className="text-sm text-gray-400 mb-1">Date</p>
+                <p className="font-medium text-white">
                   {new Date(donation.createdAt).toLocaleString()}
                 </p>
               </div>
               {donation.category && (
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Category</p>
-                  <p className="font-medium text-gray-900">{donation.category}</p>
+                  <p className="text-sm text-gray-400 mb-1">Category</p>
+                  <p className="font-medium text-white">{donation.category}</p>
                 </div>
               )}
               {donation.transactionHash && (
                 <div className="col-span-2">
-                  <p className="text-sm text-gray-600 mb-1">Transaction Hash</p>
-                  <p className="font-mono text-sm text-gray-900 break-all">{donation.transactionHash}</p>
+                  <p className="text-sm text-gray-400 mb-1">Transaction Hash</p>
+                  <p className="font-mono text-sm text-white break-all">{donation.transactionHash}</p>
                 </div>
               )}
             </div>
 
             {donation.description && (
               <div>
-                <p className="text-sm text-gray-600 mb-1">Description</p>
-                <p className="text-gray-900">{donation.description}</p>
+                <p className="text-sm text-gray-400 mb-1">Description</p>
+                <p className="text-white">{donation.description}</p>
               </div>
             )}
 
             {/* Receipt QR Code in Modal */}
             {receipt && (
-              <div className="border-t pt-4 mt-4">
+              <div className="border-t border-[#392e4e] pt-4 mt-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <QrCode className="w-5 h-5 text-purple-600" />
-                  <p className="text-sm font-medium text-gray-900">Donor Receipt QR Code</p>
+                  <QrCode className="w-5 h-5 text-purple-400" />
+                  <p className="text-sm font-medium text-white">Donor Receipt QR Code</p>
                 </div>
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                  <p className="text-xs text-purple-700 mb-2">
+                <div className="bg-purple-900/20 border border-purple-900/50 rounded-lg p-4">
+                  <p className="text-xs text-purple-400 mb-2">
                     Receipt: {receipt.receiptNumber}
                   </p>
                   <ReceiptQRCode receipt={receipt} />
@@ -536,14 +536,14 @@ function DonationDetailModal({
               </div>
             )}
 
-            <div className="border-t pt-4 mt-4">
-              <p className="text-sm font-medium text-gray-700 mb-3">Rejection Reason (if rejecting)</p>
+            <div className="border-t border-[#392e4e] pt-4 mt-4">
+              <p className="text-sm font-medium text-gray-300 mb-3">Rejection Reason (if rejecting)</p>
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 placeholder="Enter reason for rejection..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg text-white text-sm focus:ring-2 focus:ring-red-500"
               />
             </div>
 
@@ -565,7 +565,7 @@ function DonationDetailModal({
               </button>
               <button
                 onClick={onClose}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-6 py-2 border border-[#392e4e] rounded-lg text-gray-300 hover:bg-[#1a1a2e]"
               >
                 Close
               </button>

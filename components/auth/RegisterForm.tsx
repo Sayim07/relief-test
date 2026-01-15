@@ -43,7 +43,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
 
     try {
       const additionalData: any = {};
-      
+
       if (formData.phoneNumber) additionalData.phoneNumber = formData.phoneNumber;
       if (formData.organization) additionalData.organization = formData.organization;
       if (formData.location) additionalData.location = formData.location;
@@ -87,7 +87,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
     try {
       setLocalError(null);
       const additionalData: any = {};
-      
+
       if (formData.phoneNumber) additionalData.phoneNumber = formData.phoneNumber;
       if (formData.organization) additionalData.organization = formData.organization;
       if (formData.location) additionalData.location = formData.location;
@@ -123,89 +123,89 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="displayName" className="block text-sm font-medium text-gray-400 mb-1">
           Full Name *
         </label>
         <div className="relative">
-          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
           <input
             id="displayName"
             type="text"
             required
             value={formData.displayName}
             onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500"
             placeholder="John Doe"
           />
         </div>
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-1">
           Email *
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
           <input
             id="email"
             type="email"
             required
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500"
             placeholder="your@email.com"
           />
         </div>
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="password" className="block text-sm font-medium text-gray-400 mb-1">
           Password *
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
           <input
             id="password"
             type="password"
             required
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500"
             placeholder="••••••••"
           />
         </div>
       </div>
 
       <div>
-        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-400 mb-1">
           Confirm Password *
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
           <input
             id="confirmPassword"
             type="password"
             required
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500"
             placeholder="••••••••"
           />
         </div>
       </div>
 
       <div>
-        <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-400 mb-1">
           Phone Number
         </label>
         <div className="relative">
-          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
           <input
             id="phoneNumber"
             type="tel"
             value={formData.phoneNumber}
             onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500"
             placeholder="+1234567890"
           />
         </div>
@@ -213,17 +213,17 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
 
       {(role === 'relief_partner' || role === 'beneficiary') && (
         <div>
-          <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="organization" className="block text-sm font-medium text-gray-400 mb-1">
             Organization
           </label>
           <div className="relative">
-            <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input
               id="organization"
               type="text"
               value={formData.organization}
               onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500"
               placeholder="Organization name"
             />
           </div>
@@ -231,17 +231,17 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
       )}
 
       <div>
-        <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="location" className="block text-sm font-medium text-gray-400 mb-1">
           Location
         </label>
         <div className="relative">
-          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
           <input
             id="location"
             type="text"
             value={formData.location}
             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500"
             placeholder="City, Country"
           />
         </div>
@@ -249,7 +249,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
 
       {(role === 'beneficiary' || role === 'relief_partner') && (
         <div>
-          <label htmlFor="walletAddress" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="walletAddress" className="block text-sm font-medium text-gray-400 mb-1">
             Wallet Address (Optional)
           </label>
           <input
@@ -257,14 +257,14 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
             type="text"
             value={formData.walletAddress}
             onChange={(e) => setFormData({ ...formData, walletAddress: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+            className="w-full px-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm text-white placeholder-gray-500"
             placeholder="0x..."
           />
         </div>
       )}
 
       {(error || localError) && (
-        <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+        <div className="flex items-center gap-2 text-red-500 text-sm bg-red-900/10 p-3 rounded-lg border border-red-900/30">
           <AlertCircle className="w-4 h-4" />
           <span>{localError || error}</span>
         </div>
@@ -273,7 +273,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20"
       >
         {loading ? (
           <>
@@ -287,10 +287,10 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
 
       <div className="relative my-4">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-300"></div>
+          <div className="w-full border-t border-[#392e4e]"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-500">Or continue with</span>
+          <span className="px-2 bg-[#0a0a1a] text-gray-500">Or continue with</span>
         </div>
       </div>
 
@@ -298,7 +298,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
         type="button"
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className="w-full py-2 px-4 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full py-2 px-4 bg-[#1a1a2e] border-2 border-[#392e4e] text-white rounded-lg hover:bg-[#0a0a1a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
           <path

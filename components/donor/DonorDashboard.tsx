@@ -44,7 +44,7 @@ export default function DonorDashboard() {
       const totalDonated = donations
         .filter((d: Donation) => d.status === 'verified' || d.status === 'distributed')
         .reduce((sum: number, d: Donation) => sum + parseFloat(d.amountDisplay || '0'), 0);
-      
+
       const pendingDonations = donations.filter((d: Donation) => d.status === 'pending').length;
 
       setStats({
@@ -103,12 +103,12 @@ export default function DonorDashboard() {
       const receipt = await receiptService.get(receiptId);
       if (receipt) {
         // Generate QR code data
-        const verificationUrl = typeof window !== 'undefined' 
+        const verificationUrl = typeof window !== 'undefined'
           ? `${window.location.origin}/receipt/${receipt.id}`
           : undefined;
         const qrData = receiptService.createQRData(receipt, verificationUrl);
         const qrCodeData = JSON.stringify(qrData);
-        
+
         // Update receipt with QR code data
         await receiptService.update(receiptId, { qrCodeData });
 
@@ -116,7 +116,7 @@ export default function DonorDashboard() {
         try {
           const { generateQRCodeImage } = await import('@/lib/utils/qrcode');
           const qrImage = await generateQRCodeImage(qrData);
-          
+
           // Update receipt with QR code image URL (data URL)
           await receiptService.updateQRImageUrl(receiptId, qrImage);
         } catch (error) {
@@ -151,50 +151,50 @@ export default function DonorDashboard() {
     <div className="space-y-8">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-[#0a0a1a] rounded-lg shadow-lg p-6 border border-[#392e4e]">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-blue-600" />
             </div>
             <TrendingUp className="w-5 h-5 text-green-600" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">
+          <h3 className="text-2xl font-bold text-white mb-1">
             ${stats.totalDonated.toFixed(2)}
           </h3>
           <p className="text-sm text-gray-600">Total Donated</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-[#0a0a1a] rounded-lg shadow-lg p-6 border border-[#392e4e]">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
               <Heart className="w-6 h-6 text-purple-600" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">
+          <h3 className="text-2xl font-bold text-white mb-1">
             {stats.totalDonations}
           </h3>
           <p className="text-sm text-gray-600">Total Donations</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-[#0a0a1a] rounded-lg shadow-lg p-6 border border-[#392e4e]">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
               <FileText className="w-6 h-6 text-green-600" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">
+          <h3 className="text-2xl font-bold text-white mb-1">
             {stats.totalReceipts}
           </h3>
           <p className="text-sm text-gray-600">Receipts</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-[#0a0a1a] rounded-lg shadow-lg p-6 border border-[#392e4e]">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
               <Loader2 className="w-6 h-6 text-yellow-600" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">
+          <h3 className="text-2xl font-bold text-white mb-1">
             {stats.pendingDonations}
           </h3>
           <p className="text-sm text-gray-600">Pending</p>
@@ -215,14 +215,14 @@ export default function DonorDashboard() {
       )}
 
       {/* Donation Form */}
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Make a Donation</h2>
+      <div className="bg-[#0a0a1a] rounded-lg shadow-lg p-8 border border-[#392e4e]">
+        <h2 className="text-2xl font-bold text-white mb-6">Make a Donation</h2>
         <DonationForm onDonationSubmit={handleDonationSubmit} />
       </div>
 
       {/* Donation History */}
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Donation History</h2>
+      <div className="bg-[#0a0a1a] rounded-lg shadow-lg p-8 border border-[#392e4e]">
+        <h2 className="text-2xl font-bold text-white mb-6">Donation History</h2>
         <DonationHistory />
       </div>
 

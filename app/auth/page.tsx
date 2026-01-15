@@ -115,6 +115,9 @@ export default function AuthPage() {
               enableTilt={true}
               enableMagnetism={true}
               cardClassName="cursor-target"
+              enableBentoGrid={false}
+              centered={true}
+              gridClassName="max-w-7xl"
             />
           </div>
 

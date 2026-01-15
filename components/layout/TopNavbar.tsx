@@ -50,15 +50,15 @@ export default function TopNavbar({ onMenuClick }: TopNavbarProps) {
   const getRoleBadgeColor = (role?: string) => {
     switch (role) {
       case 'admin':
-        return 'bg-purple-100 text-purple-700 border-purple-200';
+        return 'bg-purple-900/30 text-purple-400 border-purple-500/30';
       case 'beneficiary':
-        return 'bg-green-100 text-green-700 border-green-200';
+        return 'bg-green-900/30 text-green-400 border-green-500/30';
       case 'donor':
-        return 'bg-blue-100 text-blue-700 border-blue-200';
+        return 'bg-blue-900/30 text-blue-400 border-blue-500/30';
       case 'relief_partner':
-        return 'bg-orange-100 text-orange-700 border-orange-200';
+        return 'bg-orange-900/30 text-orange-400 border-orange-500/30';
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+        return 'bg-gray-800/50 text-gray-400 border-gray-700/50';
     }
   };
 
@@ -70,17 +70,17 @@ export default function TopNavbar({ onMenuClick }: TopNavbarProps) {
   const isSepolia = chainId !== null ? isSepoliaNetwork(chainId) : false;
 
   return (
-    <nav className="sticky top-0 z-30 bg-white border-b border-gray-200 backdrop-blur-sm bg-white/95">
+    <nav className="sticky top-0 z-30 bg-[#060010]/80 border-b border-[#392e4e] backdrop-blur-md">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Left side - Hamburger menu */}
           <div className="flex-1 flex items-center">
             <button
               onClick={onMenuClick}
-              className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 -ml-2 hover:bg-white/10 rounded-lg transition-colors"
               aria-label="Open menu"
             >
-              <Menu className="w-6 h-6 text-gray-600" />
+              <Menu className="w-6 h-6 text-gray-400" />
             </button>
           </div>
 
@@ -91,8 +91,8 @@ export default function TopNavbar({ onMenuClick }: TopNavbarProps) {
               <div className={`
                 px-3 py-1.5 rounded-lg text-xs font-medium border
                 ${isSepolia
-                  ? 'bg-green-50 text-green-700 border-green-200'
-                  : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                  ? 'bg-green-900/30 text-green-400 border-green-500/30'
+                  : 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30'
                 }
               `}>
                 {isSepolia ? 'Sepolia' : `Chain ${chainId || '?'}`}
@@ -101,9 +101,9 @@ export default function TopNavbar({ onMenuClick }: TopNavbarProps) {
 
             {/* Wallet Address */}
             {isConnected && address && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-mono text-gray-700">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0a0a1a] rounded-lg border border-[#392e4e]">
+                <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+                <span className="text-sm font-mono text-gray-300">
                   {formatAddress(address)}
                 </span>
               </div>
@@ -121,9 +121,9 @@ export default function TopNavbar({ onMenuClick }: TopNavbarProps) {
 
             {/* User Info */}
             {profile && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
-                <User className="w-4 h-4 text-gray-600" />
-                <span className="text-sm font-medium text-gray-700">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#0a0a1a] rounded-lg border border-[#392e4e]/50">
+                <User className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-medium text-gray-300">
                   {profile.displayName || profile.email?.split('@')[0]}
                 </span>
               </div>
@@ -133,7 +133,7 @@ export default function TopNavbar({ onMenuClick }: TopNavbarProps) {
             {profile && (
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-red-400 hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-900/30"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="text-sm font-medium">Logout</span>

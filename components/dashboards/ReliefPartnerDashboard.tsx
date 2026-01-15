@@ -212,12 +212,12 @@ export default function ReliefPartnerDashboard() {
 
   if (!isConnected) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-        <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+      <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-12 text-center">
+        <AlertCircle className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-white mb-2">
           Wallet Not Connected
         </h3>
-        <p className="text-gray-600">
+        <p className="text-gray-400">
           Please connect your MetaMask wallet to view your relief partner dashboard.
         </p>
       </div>
@@ -236,8 +236,8 @@ export default function ReliefPartnerDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Relief Partner Dashboard</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-white">Relief Partner Dashboard</h1>
+        <p className="text-gray-400 mt-2">
           View your assigned funds, submit spending with receipts, and track your history.
         </p>
       </div>
@@ -271,10 +271,10 @@ export default function ReliefPartnerDashboard() {
       </div>
 
       {/* Assigned Funds List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Assigned Funds</h2>
+      <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">Assigned Funds</h2>
         {assignments.length === 0 ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-400">
             You don&apos;t have any assigned funds yet.
           </p>
         ) : (
@@ -282,13 +282,13 @@ export default function ReliefPartnerDashboard() {
             {assignments.map((a) => (
               <div
                 key={a.id}
-                className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                className="border border-[#392e4e] rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-[#1a1a2e]"
               >
                 <div>
-                  <p className="font-semibold text-gray-900">
+                  <p className="font-semibold text-white">
                     {a.beneficiaryName || a.beneficiaryEmail || 'Beneficiary'}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-400">
                     Assignment: {a.amountDisplay} {a.currency} • Status:{' '}
                     <span className="capitalize">{a.status}</span>
                   </p>
@@ -304,15 +304,15 @@ export default function ReliefPartnerDashboard() {
                   )}
                 </div>
                 <div className="text-sm text-right md:text-left">
-                  <p className="text-gray-600">
+                  <p className="text-gray-400">
                     Spent:{' '}
-                    <span className="font-semibold text-green-700">
+                    <span className="font-semibold text-green-400">
                       ${a.spentAmount.toFixed(2)}
                     </span>
                   </p>
-                  <p className="text-gray-600">
+                  <p className="text-gray-400">
                     Remaining:{' '}
-                    <span className="font-semibold text-orange-700">
+                    <span className="font-semibold text-orange-400">
                       ${a.remainingAmount.toFixed(2)}
                     </span>
                   </p>
@@ -330,19 +330,19 @@ export default function ReliefPartnerDashboard() {
       </div>
 
       {/* Spending Submission */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">
           Submit Spending &amp; Create Receipt
         </h2>
         {activeAssignments.length === 0 ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-400">
             You currently have no active assignments to spend from.
           </p>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-400 mb-1">
                   Assignment
                 </label>
                 <select
@@ -353,7 +353,7 @@ export default function ReliefPartnerDashboard() {
                       assignmentId: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
                 >
                   <option value="">Select assignment...</option>
                   {activeAssignments.map((a) => (
@@ -365,7 +365,7 @@ export default function ReliefPartnerDashboard() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-400 mb-1">
                   Amount
                 </label>
                 <input
@@ -379,12 +379,12 @@ export default function ReliefPartnerDashboard() {
                       amount: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
                   placeholder="Amount spent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-400 mb-1">
                   Recipient Address (Wallet)
                 </label>
                 <input
@@ -396,12 +396,12 @@ export default function ReliefPartnerDashboard() {
                       recipient: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+                  className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500/50"
                   placeholder="0x..."
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-400 mb-1">
                   Description
                 </label>
                 <input
@@ -413,7 +413,7 @@ export default function ReliefPartnerDashboard() {
                       description: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
                   placeholder="What was this used for?"
                 />
               </div>
@@ -436,12 +436,12 @@ export default function ReliefPartnerDashboard() {
       </div>
 
       {/* Spending & Receipt History */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">
           Spending &amp; Receipt History
         </h2>
         {receipts.length === 0 ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-400">
             You haven&apos;t submitted any receipts yet.
           </p>
         ) : (
@@ -449,24 +449,24 @@ export default function ReliefPartnerDashboard() {
             {receipts.map((r) => (
               <div
                 key={r.id}
-                className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                className="border border-[#392e4e] rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-[#1a1a2e]"
               >
                 <div>
-                  <p className="font-semibold text-gray-900">
+                  <p className="font-semibold text-white">
                     {r.amountDisplay} {r.currency}{' '}
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-400">
                       ({r.status.toUpperCase()})
                     </span>
                   </p>
                   {r.description && (
-                    <p className="text-sm text-gray-600 mt-1">{r.description}</p>
+                    <p className="text-sm text-gray-400 mt-1">{r.description}</p>
                   )}
                   <p className="text-xs text-gray-500 mt-1">
                     Receipt: {r.receiptNumber}
                   </p>
                 </div>
                 <div className="text-sm text-right md:text-left">
-                  <p className="text-gray-600">
+                  <p className="text-gray-400">
                     Date:{' '}
                     {r.createdAt
                       ? new Date(r.createdAt).toLocaleDateString()

@@ -145,18 +145,18 @@ export default function FundDistribution() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Fund Distribution</h2>
+      <h2 className="text-2xl font-bold text-white">Fund Distribution</h2>
 
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-400 mb-2">
               Select Relief Fund *
             </label>
             <select
               value={selectedFund}
               onChange={(e) => setSelectedFund(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-[#0a0a1a] border border-[#392e4e] rounded-lg text-white focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Choose a relief fund...</option>
               {funds.map((fund) => (
@@ -166,9 +166,9 @@ export default function FundDistribution() {
               ))}
             </select>
             {selectedFundData && (
-              <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  Available: <span className="font-semibold text-blue-600">
+              <div className="mt-2 p-3 bg-blue-900/20 border border-blue-900/50 rounded-lg">
+                <p className="text-sm text-gray-300">
+                  Available: <span className="font-semibold text-blue-400">
                     ${(parseFloat(selectedFundData.remainingAmount.toString()) / 1e18).toFixed(2)}
                   </span>
                 </p>
@@ -177,13 +177,13 @@ export default function FundDistribution() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-400 mb-2">
               Select Beneficiary *
             </label>
             <select
               value={selectedBeneficiary}
               onChange={(e) => setSelectedBeneficiary(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 bg-[#0a0a1a] border border-[#392e4e] rounded-lg text-white focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Choose a beneficiary...</option>
               {beneficiaries.map((beneficiary) => (
@@ -193,8 +193,8 @@ export default function FundDistribution() {
               ))}
             </select>
             {selectedBeneficiaryData && (
-              <div className="mt-2 p-3 bg-green-50 rounded-lg">
-                <p className="text-sm text-gray-600">
+              <div className="mt-2 p-3 bg-green-900/20 border border-green-900/50 rounded-lg">
+                <p className="text-sm text-gray-300">
                   {selectedBeneficiaryData.displayName || selectedBeneficiaryData.email}
                   {selectedBeneficiaryData.location && ` - ${selectedBeneficiaryData.location}`}
                 </p>
@@ -203,18 +203,18 @@ export default function FundDistribution() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-400 mb-2">
               Amount (USDT) *
             </label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
               <input
                 type="number"
                 step="0.01"
                 min="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 bg-[#0a0a1a] border border-[#392e4e] rounded-lg text-white focus:ring-2 focus:ring-blue-500"
                 placeholder="0.00"
               />
             </div>
@@ -247,22 +247,22 @@ export default function FundDistribution() {
 
       {/* Distribution Preview */}
       {selectedFund && selectedBeneficiary && amount && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Distribution Preview</h3>
+        <div className="bg-blue-900/10 border border-blue-900/30 rounded-lg p-6">
+          <h3 className="font-semibold text-white mb-4">Distribution Preview</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600">From Fund:</span>
-              <span className="font-medium text-gray-900">{selectedFundData?.name}</span>
+              <span className="text-gray-400">From Fund:</span>
+              <span className="font-medium text-white">{selectedFundData?.name}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">To Beneficiary:</span>
-              <span className="font-medium text-gray-900">
+              <span className="text-gray-400">To Beneficiary:</span>
+              <span className="font-medium text-white">
                 {selectedBeneficiaryData?.displayName || selectedBeneficiaryData?.email}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Amount:</span>
-              <span className="font-semibold text-lg text-blue-600">${amount} USDT</span>
+              <span className="text-gray-400">Amount:</span>
+              <span className="font-semibold text-lg text-blue-400">${amount} USDT</span>
             </div>
           </div>
         </div>

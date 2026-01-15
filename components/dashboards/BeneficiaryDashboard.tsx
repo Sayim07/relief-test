@@ -273,10 +273,10 @@ export default function BeneficiaryDashboard() {
 
   if (!isConnected) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-        <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Wallet Not Connected</h3>
-        <p className="text-gray-600">Please connect your MetaMask wallet to view your dashboard.</p>
+      <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-12 text-center">
+        <AlertCircle className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-white mb-2">Wallet Not Connected</h3>
+        <p className="text-gray-400">Please connect your MetaMask wallet to view your dashboard.</p>
       </div>
     );
   }
@@ -293,8 +293,8 @@ export default function BeneficiaryDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Beneficiary Dashboard</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-white">Beneficiary Dashboard</h1>
+        <p className="text-gray-400 mt-2">
           View your funds, assign relief partners, and track spending.
         </p>
       </div>
@@ -344,20 +344,20 @@ export default function BeneficiaryDashboard() {
       </div>
 
       {/* Assign Funds to Relief Partner */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Assign Funds to Relief Partner</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="text-lg font-semibold text-white">Assign Funds to Relief Partner</h2>
+            <p className="text-sm text-gray-400">
               Allocate part of your beneficiary funds to trusted relief partners for execution.
             </p>
           </div>
-          <ArrowRightCircle className="w-6 h-6 text-blue-600" />
+          <ArrowRightCircle className="w-6 h-6 text-blue-500" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-400 mb-1">
               Source Beneficiary Fund
             </label>
             <select
@@ -365,7 +365,7 @@ export default function BeneficiaryDashboard() {
               onChange={(e) =>
                 setAssignmentForm((prev) => ({ ...prev, beneficiaryFundId: e.target.value }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">Select a fund...</option>
               {beneficiaryFunds.map((fund) => (
@@ -377,7 +377,7 @@ export default function BeneficiaryDashboard() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-400 mb-1">
               Relief Partner
             </label>
             <select
@@ -385,7 +385,7 @@ export default function BeneficiaryDashboard() {
               onChange={(e) =>
                 setAssignmentForm((prev) => ({ ...prev, reliefPartnerId: e.target.value }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">Select a partner...</option>
               {reliefPartners.map((partner) => (
@@ -397,7 +397,7 @@ export default function BeneficiaryDashboard() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+            <label className="block text-sm font-medium text-gray-400 mb-1">Amount</label>
             <input
               type="number"
               min="0"
@@ -406,19 +406,19 @@ export default function BeneficiaryDashboard() {
               onChange={(e) =>
                 setAssignmentForm((prev) => ({ ...prev, amount: e.target.value }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
               placeholder="Enter amount to assign"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category (optional)</label>
+            <label className="block text-sm font-medium text-gray-400 mb-1">Category (optional)</label>
             <select
               value={assignmentForm.category || ''}
               onChange={(e) =>
                 setAssignmentForm((prev) => ({ ...prev, category: e.target.value || undefined }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">No specific category</option>
               {categories.map((cat) => (
@@ -431,7 +431,7 @@ export default function BeneficiaryDashboard() {
         </div>
 
         <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-400 mb-1">
             Purpose / Notes (optional)
           </label>
           <textarea
@@ -440,7 +440,7 @@ export default function BeneficiaryDashboard() {
             onChange={(e) =>
               setAssignmentForm((prev) => ({ ...prev, purpose: e.target.value }))
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
             placeholder="Describe how the relief partner should use these funds..."
           />
         </div>
@@ -457,19 +457,19 @@ export default function BeneficiaryDashboard() {
       </div>
 
       {/* Assigned Relief Partners & Spending Tracking */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb  -4">
+      <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Assigned Relief Partners</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="text-lg font-semibold text-white">Assigned Relief Partners</h2>
+            <p className="text-sm text-gray-400">
               Track how much each relief partner has been allocated and spent.
             </p>
           </div>
-          <Users className="w-6 h-6 text-blue-600" />
+          <Users className="w-6 h-6 text-blue-500" />
         </div>
 
         {partnerStats.length === 0 ? (
-          <p className="text-sm text-gray-600 mt-4">
+          <p className="text-sm text-gray-400 mt-4">
             No relief partners have been assigned yet. Use the form above to create your first
             assignment.
           </p>
@@ -478,23 +478,23 @@ export default function BeneficiaryDashboard() {
             {partnerStats.map((ps) => (
               <div
                 key={ps.partner?.uid || ps.assignments[0]?.reliefPartnerId}
-                className="border border-gray-200 rounded-lg p-4"
+                className="border border-[#392e4e] rounded-lg p-4 bg-[#1a1a2e]"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-white">
                       {ps.partner?.displayName || ps.partner?.email || 'Relief Partner'}
                     </p>
                     {ps.partner?.organization && (
-                      <p className="text-xs text-gray-600">{ps.partner.organization}</p>
+                      <p className="text-xs text-gray-400">{ps.partner.organization}</p>
                     )}
                     {ps.partner?.email && (
                       <p className="text-xs text-gray-500">{ps.partner.email}</p>
                     )}
                   </div>
                   <div className="text-right text-sm">
-                    <p className="text-gray-600">Total Assigned</p>
-                    <p className="font-semibold text-gray-900">
+                    <p className="text-gray-400">Total Assigned</p>
+                    <p className="font-semibold text-white">
                       ${ps.totalAssigned.toFixed(2)}
                     </p>
                   </div>
@@ -502,26 +502,26 @@ export default function BeneficiaryDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 text-sm">
                   <div>
-                    <p className="text-gray-600">Spent</p>
-                    <p className="font-semibold text-green-700">
+                    <p className="text-gray-400">Spent</p>
+                    <p className="font-semibold text-green-400">
                       ${ps.totalSpent.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-600">Remaining</p>
-                    <p className="font-semibold text-orange-700">
+                    <p className="text-gray-400">Remaining</p>
+                    <p className="font-semibold text-orange-400">
                       ${ps.totalRemaining.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-600">Assignments</p>
-                    <p className="font-semibold text-gray-900">
+                    <p className="text-gray-400">Assignments</p>
+                    <p className="font-semibold text-white">
                       {ps.assignments.length}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-3 border-t border-gray-100 pt-3">
+                <div className="mt-3 border-t border-[#392e4e] pt-3">
                   <p className="text-xs font-medium text-gray-500 mb-2">
                     Recent Assignments
                   </p>
@@ -529,10 +529,10 @@ export default function BeneficiaryDashboard() {
                     {ps.assignments.slice(0, 4).map((a) => (
                       <div
                         key={a.id}
-                        className="flex items-center justify-between text-xs bg-gray-50 rounded-md px-3 py-2"
+                        className="flex items-center justify-between text-xs bg-[#0a0a1a] border border-[#392e4e] rounded-md px-3 py-2"
                       >
                         <div className="flex-1">
-                          <p className="font-medium text-gray-800">
+                          <p className="font-medium text-gray-300">
                             {a.purpose || 'General support'}
                           </p>
                           <p className="text-gray-500">
@@ -544,10 +544,10 @@ export default function BeneficiaryDashboard() {
                           </p>
                         </div>
                         <div className="text-right ml-3">
-                          <p className="font-semibold text-gray-900">
+                          <p className="font-semibold text-white">
                             ${a.amount.toFixed(2)}
                           </p>
-                          <p className="text-gray-500 capitalize">
+                          <p className="text-gray-400 capitalize">
                             {a.status}
                           </p>
                         </div>
