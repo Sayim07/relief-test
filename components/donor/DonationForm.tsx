@@ -29,10 +29,27 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [ethPrice, setEthPrice] = useState<number | null>(null);
+  const [conversionLoading, setConversionLoading] = useState(true);
 
   useEffect(() => {
     loadCategories();
+    fetchEthPrice();
   }, []);
+
+  const fetchEthPrice = async () => {
+    try {
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr');
+      const data = await response.json();
+      if (data.ethereum?.inr) {
+        setEthPrice(data.ethereum.inr);
+      }
+    } catch (error) {
+      console.error('Error fetching ETH price:', error);
+    } finally {
+      setConversionLoading(false);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -134,7 +151,18 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
             placeholder="0.001"
           />
         </div>
-        <p className="mt-1 text-sm text-gray-400">Minimum: 0.001 ETH | Maximum: 1000 ETH</p>
+        <div className="flex justify-between mt-1 text-sm text-gray-400">
+          <p>Minimum: 0.001 ETH | Maximum: 1000 ETH</p>
+          {formData.amount && !isNaN(parseFloat(formData.amount)) && (
+            <p className="text-blue-400 font-medium">
+              {conversionLoading ? (
+                'Loading rate...'
+              ) : ethPrice ? (
+                `≈ ₹${(parseFloat(formData.amount) * ethPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })} INR`
+              ) : null}
+            </p>
+          )}
+        </div>
       </div>
 
       <div>
@@ -180,52 +208,58 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
         </div>
       </div>
 
-      {!isConnected && (
-        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-blue-800 mb-3">
-            <AlertCircle className="w-5 h-5" />
-            <span className="font-medium">Test Mode</span>
+      {
+        !isConnected && (
+          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-blue-800 mb-3">
+              <AlertCircle className="w-5 h-5" />
+              <span className="font-medium">Test Mode</span>
+            </div>
+            <p className="text-sm text-blue-300 mb-3">
+              Wallet not connected. You can still test database and QR code generation.
+              Donations will be saved with a test transaction hash.
+            </p>
+            <button
+              type="button"
+              onClick={connect}
+              disabled={walletLoading}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {walletLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Wallet className="w-4 h-4" />
+                  Connect Wallet (Optional)
+                </>
+              )}
+            </button>
           </div>
-          <p className="text-sm text-blue-300 mb-3">
-            Wallet not connected. You can still test database and QR code generation.
-            Donations will be saved with a test transaction hash.
-          </p>
-          <button
-            type="button"
-            onClick={connect}
-            disabled={walletLoading}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {walletLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              <>
-                <Wallet className="w-4 h-4" />
-                Connect Wallet (Optional)
-              </>
-            )}
-          </button>
-        </div>
-      )}
+        )
+      }
 
-      {isConnected && address && (
-        <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-green-800">
-            <Wallet className="w-5 h-5" />
-            <span className="font-medium">Connected: {address.slice(0, 6)}...{address.slice(-4)}</span>
+      {
+        isConnected && address && (
+          <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-green-800">
+              <Wallet className="w-5 h-5" />
+              <span className="font-medium">Connected: {address.slice(0, 6)}...{address.slice(-4)}</span>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-      {error && (
-        <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
-          <AlertCircle className="w-4 h-4" />
-          <span>{error}</span>
-        </div>
-      )}
+      {
+        error && (
+          <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+            <AlertCircle className="w-4 h-4" />
+            <span>{error}</span>
+          </div>
+        )
+      }
 
       <button
         type="submit"
@@ -244,6 +278,6 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
           </>
         )}
       </button>
-    </form>
+    </form >
   );
 }
