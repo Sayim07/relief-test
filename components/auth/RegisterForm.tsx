@@ -15,7 +15,7 @@ interface RegisterFormProps {
 
 export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
   const { register, signInWithGoogle, loading, error } = useAuth();
-  const { address, isConnected } = useWallet();
+  const { address, isConnected, connect, isLoading: walletLoading } = useWallet();
   const router = useRouter();
   const [categories, setCategories] = useState<any[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
@@ -365,10 +365,10 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
         </div>
       </div>
 
-      {(role === 'beneficiary' || role === 'relief_partner') && (
+      {role === 'beneficiary' && (
         <div>
           <label htmlFor="walletAddress" className="block text-sm font-medium text-gray-400 mb-1">
-            Wallet Address {role === 'relief_partner' ? '*' : '(Optional)'}
+            Wallet Address (Optional)
             {isConnected && (
               <span className="ml-2 text-xs text-green-400">✓ Connected</span>
             )}
@@ -378,7 +378,6 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
             <input
               id="walletAddress"
               type="text"
-              required={role === 'relief_partner'}
               value={formData.walletAddress}
               onChange={(e) => setFormData({ ...formData, walletAddress: e.target.value })}
               readOnly={isConnected}
@@ -392,11 +391,61 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
             {isConnected ? (
               <>💰 Your MetaMask wallet is connected. You can proceed with registration.</>
             ) : (
-              <>
-                {role === 'relief_partner'
-                  ? 'Connect your MetaMask wallet or enter manually. Beneficiaries will send funds to this address.'
-                  : 'Connect your MetaMask wallet or enter manually (optional).'}
-              </>
+              <>Connect your MetaMask wallet or enter manually (optional).</>
+            )}
+          </p>
+        </div>
+      )}
+
+      {role === 'relief_partner' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-1">
+            Wallet Address *
+            {isConnected && (
+              <span className="ml-2 text-xs text-green-400">✓ Connected</span>
+            )}
+          </label>
+          {isConnected && address ? (
+            <div className="relative">
+              <Wallet className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+              <input
+                type="text"
+                readOnly
+                value={address}
+                className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-green-500/30 rounded-lg font-mono text-sm text-white cursor-not-allowed opacity-75"
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await connect();
+                } catch (err: any) {
+                  setLocalError(err.message || 'Failed to connect wallet');
+                }
+              }}
+              disabled={walletLoading}
+              className="w-full py-2 px-4 bg-[#1a1a2e] border-2 border-[#392e4e] text-white rounded-lg hover:bg-[#0a0a1a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+            >
+              {walletLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Wallet className="w-5 h-5" />
+                  Connect Wallet
+                </>
+              )}
+            </button>
+          )}
+          <p className="text-xs text-gray-500 mt-1">
+            {isConnected ? (
+              <>💰 Your MetaMask wallet is connected. Beneficiaries will send funds to this address.</>
+            ) : (
+              <>Connect your MetaMask wallet to continue. Beneficiaries will send funds to this address.</>
             )}
           </p>
         </div>
