@@ -39,6 +39,10 @@ export const receiptService = {
       createdAt: receipt.createdAt.toISOString(),
       transactionHash: receipt.transactionHash,
       verificationUrl,
+      payerName: receipt.payerName,
+      amountDisplay: receipt.amountDisplay,
+      description: receipt.description,
+      recipientName: receipt.recipientName || receipt.recipientEmail,
     };
   },
 
@@ -53,10 +57,13 @@ export const receiptService = {
   ): Promise<string> {
     const receiptNumber = this.generateReceiptNumber();
 
+    // Generate a new document reference to get the ID
+    const docRef = doc(collection(db, 'receipts'));
+
     // Create QR code data (including optional verification URL)
     const tempReceipt: Receipt = {
       ...receipt,
-      id: '', // Will be set after creation
+      id: docRef.id, // Use the generated ID
       receiptNumber,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -65,7 +72,7 @@ export const receiptService = {
     const qrData = this.createQRData(tempReceipt, verificationUrl);
     const qrCodeData = JSON.stringify(qrData);
 
-    const docRef = await addDoc(collection(db, 'receipts'), {
+    await setDoc(docRef, {
       ...receipt,
       receiptNumber,
       qrCodeData,
@@ -82,7 +89,7 @@ export const receiptService = {
   async get(id: string): Promise<Receipt | null> {
     const docRef = doc(db, 'receipts', id);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       const data = docSnap.data();
       return {
@@ -102,7 +109,7 @@ export const receiptService = {
   async getByReceiptNumber(receiptNumber: string): Promise<Receipt | null> {
     const q = query(collection(db, 'receipts'), where('receiptNumber', '==', receiptNumber));
     const querySnapshot = await getDocs(q);
-    
+
     if (!querySnapshot.empty) {
       const doc = querySnapshot.docs[0];
       const data = doc.data();
@@ -129,7 +136,7 @@ export const receiptService = {
         orderBy('createdAt', 'desc')
       );
       const querySnapshot = await getDocs(q);
-      
+
       return querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
@@ -149,7 +156,7 @@ export const receiptService = {
           where('payerId', '==', payerId)
         );
         const querySnapshot = await getDocs(q);
-        
+
         const receipts = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           return {
@@ -160,7 +167,7 @@ export const receiptService = {
             verifiedAt: data.verifiedAt?.toDate(),
           } as Receipt;
         });
-        
+
         // Sort manually
         return receipts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       }
@@ -178,7 +185,7 @@ export const receiptService = {
       orderBy('createdAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
@@ -201,7 +208,7 @@ export const receiptService = {
       orderBy('createdAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
@@ -224,7 +231,7 @@ export const receiptService = {
       orderBy('createdAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
@@ -248,7 +255,7 @@ export const receiptService = {
       limit(limitCount)
     );
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {

@@ -50,33 +50,33 @@ export interface Donation {
   category?: string; // Optional category
   description?: string;
   status: DonationStatus;
-  
+
   // Donation Type (Path A: direct to relief partner, Path B: general pool)
   donationType: 'direct' | 'general'; // 'direct' = to relief partner, 'general' = to pool
   reliefPartnerId?: string; // If donationType === 'direct'
-  
+
   // Blockchain & Transaction
   transactionHash?: string; // Blockchain transaction hash
   blockNumber?: number;
   confirmations?: number;
   gasUsed?: string; // Gas used in wei
-  
+
   // Verification
   verification: DonationVerification;
-  
+
   // Legacy fields (for backward compatibility)
   verifiedBy?: string; // Admin UID who verified (deprecated, use verification.verifiedBy)
   verifiedAt?: Date; // (deprecated, use verification.verifiedAt)
-  
+
   // Rejection/Dispute
   rejectedReason?: string;
   rejectedBy?: string;
   rejectedAt?: Date;
-  
+
   // Distribution tracking
   distributedAt?: Date;
   distributedTo?: string[]; // Relief partner IDs (if general donation)
-  
+
   createdAt: Date;
   updatedAt: Date;
   metadata?: {
@@ -211,4 +211,8 @@ export interface ReceiptQRData {
   createdAt: string; // ISO date string
   transactionHash?: string;
   verificationUrl?: string; // URL to verify receipt
+  payerName?: string;
+  amountDisplay?: string;
+  description?: string;
+  recipientName?: string;
 }
