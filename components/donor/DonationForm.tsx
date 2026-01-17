@@ -39,13 +39,15 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
 
   const fetchEthPrice = async () => {
     try {
-      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr');
+      const response = await fetch('/api/eth-price');
       const data = await response.json();
-      if (data.ethereum?.inr) {
-        setEthPrice(data.ethereum.inr);
+      if (data.success && data.ethPrice) {
+        setEthPrice(data.ethPrice);
       }
     } catch (error) {
       console.error('Error fetching ETH price:', error);
+      // Use fallback price if fetch fails
+      setEthPrice(200000); // Default fallback price
     } finally {
       setConversionLoading(false);
     }
