@@ -16,6 +16,16 @@ export type FundStatus = 'active' | 'distributed' | 'closed';
 export type AssignmentStatus = 'pending' | 'active' | 'completed' | 'cancelled';
 
 /**
+ * Relief Request Status
+ */
+export type ReliefRequestStatus = 'pending_verification' | 'verified' | 'rejected' | 'fulfilled';
+
+/**
+ * Urgency Level
+ */
+export type UrgencyLevel = 'low' | 'medium' | 'high';
+
+/**
  * Receipt Status
  */
 export type ReceiptStatus = 'pending' | 'verified' | 'rejected';
@@ -215,4 +225,27 @@ export interface ReceiptQRData {
   amountDisplay?: string;
   description?: string;
   recipientName?: string;
+}
+
+/**
+ * Relief Request - Off-chain tickets for relief
+ */
+export interface ReliefRequest {
+  id: string;
+  phone: string;
+  name: string;
+  location: string;
+  category: string;
+  urgency: UrgencyLevel;
+  description?: string;
+  status: ReliefRequestStatus;
+  approvedAmount?: number;
+  beneficiaryWallet?: string;
+  verifiedAt?: Date;
+  verifiedBy?: string; // Admin UID
+  createdAt: Date;
+  updatedAt: Date;
+  metadata?: {
+    [key: string]: any;
+  };
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { donationService, receiptService } from '@/lib/firebase/services/index';
+import { donationService, receiptService } from '@/lib/firebase/services';
 import { Donation } from '@/lib/types/database';
 import { Receipt } from '@/lib/types/database';
 import { Calendar, IndianRupee, FileText, Eye, Loader2, CheckCircle, Clock, XCircle, X, Download } from 'lucide-react';

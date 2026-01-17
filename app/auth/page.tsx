@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Wallet, Heart, HandHeart, ArrowRight, BarChart3 } from 'lucide-react';
+import { Shield, Users, Wallet, Heart, HandHeart, ArrowRight, BarChart3, ArrowLeft } from 'lucide-react';
 
 // Dynamically import MagicBento to avoid SSR issues with GSAP/DOM
 import dynamic from 'next/dynamic';
@@ -13,6 +13,9 @@ const ShinyText = dynamic(() => import('@/components/ShinyText'), {
   ssr: false,
 });
 const TargetCursor = dynamic(() => import('@/components/TargetCursor'), {
+  ssr: false,
+});
+const DotGrid = dynamic(() => import('@/components/DotGrid'), {
   ssr: false,
 });
 
@@ -64,7 +67,19 @@ export default function AuthPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-blue-500/30">
+    <div className="min-h-screen bg-[#000000] selection:bg-blue-500/30 overflow-x-hidden relative">
+      <DotGrid />
+
+      {/* Back Button */}
+      <div className="fixed top-8 left-8 z-[100]">
+        <button
+          onClick={() => router.push('/')}
+          className="flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all font-bold group text-white"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          Back
+        </button>
+      </div>
       {/* Background decoration */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-900/20 blur-[120px] rounded-full"></div>

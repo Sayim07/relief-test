@@ -162,6 +162,13 @@ export const useAuth = () => {
     return state.profile ? roles.includes(state.profile.role) : false;
   };
 
+  const refreshProfile = async () => {
+    if (state.user) {
+      const profile = await userService.get(state.user.uid);
+      setState(prev => ({ ...prev, profile }));
+    }
+  };
+
   return {
     ...state,
     register,
@@ -171,5 +178,6 @@ export const useAuth = () => {
     resetPassword,
     hasRole,
     hasAnyRole,
+    refreshProfile,
   };
 };

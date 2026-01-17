@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWallet } from '@/hooks/useWallet';
-import { donationService, receiptService } from '@/lib/firebase/services/index';
+import { donationService, receiptService, reliefRequestService } from '@/lib/firebase/services';
 import MetricCard from '@/components/ui/MetricCard';
 import DonationForm from '@/components/donor/DonationForm';
 import DonationHistory from '@/components/donor/DonationHistory';
 import DonationConfirmation from '@/components/donor/DonationConfirmation';
+import type { ReliefRequest } from '@/lib/types/database';
 import {
   Heart,
   IndianRupee,
@@ -15,6 +16,7 @@ import {
   TrendingUp,
   Wallet,
   CheckCircle,
+  MapPin,
 } from 'lucide-react';
 import { formatEther, parseEther } from 'ethers';
 import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
@@ -34,6 +36,8 @@ export default function DonorDashboard() {
   const [loading, setLoading] = useState(true);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationReceipt, setConfirmationReceipt] = useState<any>(null);
+  const [reliefRequests, setReliefRequests] = useState<ReliefRequest[]>([]);
+  const [requestLoading, setRequestLoading] = useState(true);
 
   // MagicBento Ref
   const gridRef = useRef<HTMLDivElement>(null);
@@ -41,8 +45,21 @@ export default function DonorDashboard() {
   useEffect(() => {
     if (profile?.uid) {
       loadMetrics();
+      loadReliefRequests();
     }
   }, [profile, address, provider]);
+
+  const loadReliefRequests = async () => {
+    try {
+      setRequestLoading(true);
+      const data = await reliefRequestService.getByStatus('verified');
+      setReliefRequests(data);
+    } catch (error) {
+      console.error('Error loading relief requests:', error);
+    } finally {
+      setRequestLoading(false);
+    }
+  };
 
   const loadMetrics = async () => {
     if (!profile?.uid) return;
@@ -280,6 +297,92 @@ export default function DonorDashboard() {
           icon={FileText}
           subtitle="Receipts generated"
         />
+      </div>
+
+      {/* Verified Relief Requests (Option A: Direct Donation) */}
+      <div className="bg-[#0a0a1a]/50 backdrop-blur-xl rounded-[2rem] border border-[#392e4e] p-8 shadow-2xl overflow-hidden relative">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+              <CheckCircle className="w-6 h-6 text-blue-500" /> Direct Relief Requests
+            </h2>
+            <p className="text-gray-400 mt-1 font-medium italic">Verified by ReliefChain Admins • Donate directly to beneficiaries</p>
+          </div>
+          <div className="hidden sm:flex px-4 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-400/20 rounded-full text-[10px] font-black uppercase tracking-widest">
+            Option A: Direct Path
+          </div>
+        </div>
+
+        {requestLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+          </div>
+        ) : reliefRequests.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-[#392e4e] rounded-3xl">
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No Verified Requests At The Moment</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {reliefRequests.map(req => (
+              <div
+                key={req.id}
+                className="bg-black/30 border border-[#392e4e] p-6 rounded-2xl hover:border-blue-500/50 transition-all group flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-red-500/10 text-red-500 rounded-full border border-red-500/20">
+                      {req.urgency} Urgency
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">
+                      {req.category}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">{req.name}</h3>
+                  <p className="text-gray-500 text-xs mb-4 flex items-center gap-1">
+                    <MapPin className="w-3 h-3" /> {req.location}
+                  </p>
+                  <p className="text-sm text-gray-400 line-clamp-2 italic mb-6">"{req.description}"</p>
+                </div>
+
+                <div className="pt-6 border-t border-[#392e4e] space-y-4">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Approved Amount</p>
+                      <p className="text-2xl font-black text-green-400">₹{req.approvedAmount?.toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    disabled={!isConnected || !req.beneficiaryWallet}
+                    onClick={() => {
+                      if (!isConnected) {
+                        alert('Please connect your wallet first');
+                        return;
+                      }
+                      // For now, prompt amount or use default
+                      const amountStr = prompt(`Enter donation amount for ${req.name} (ETH):`, '0.1');
+                      if (amountStr && signer) {
+                        signer.sendTransaction({
+                          to: req.beneficiaryWallet,
+                          value: parseEther(amountStr)
+                        }).then(tx => {
+                          alert(`Transaction sent! Hash: ${tx.hash}`);
+                          // Ideally track this in Firestore too
+                        }).catch(err => {
+                          console.error('Donation failed:', err);
+                          alert('Donation failed. See console for details.');
+                        });
+                      }
+                    }}
+                    className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-black text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2"
+                  >
+                    {!req.beneficiaryWallet ? 'NO WALLET LINKED' : isConnected ? 'DONATE DIRECTLY' : 'CONNECT WALLET'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Donation Form and History */}

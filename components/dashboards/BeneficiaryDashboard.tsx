@@ -59,6 +59,7 @@ export default function BeneficiaryDashboard() {
   const [beneficiaryFunds, setBeneficiaryFunds] = useState<BeneficiaryFund[]>([]);
   const [assignments, setAssignments] = useState<ReliefPartnerAssignment[]>([]);
   const [reliefPartners, setReliefPartners] = useState<UserProfile[]>([]);
+  const [filteredPartners, setFilteredPartners] = useState<UserProfile[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [assignmentForm, setAssignmentForm] = useState<AssignmentFormState>({
     beneficiaryFundId: '',
@@ -69,6 +70,8 @@ export default function BeneficiaryDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  const selectedFund = beneficiaryFunds.find((bf) => bf.id === assignmentForm.beneficiaryFundId);
 
   useEffect(() => {
     if (isConnected && address && profile?.uid) {
@@ -130,6 +133,18 @@ export default function BeneficiaryDashboard() {
     }
   };
 
+  useEffect(() => {
+    const selectedFund = beneficiaryFunds.find(f => f.id === assignmentForm.beneficiaryFundId);
+    if (selectedFund?.category) {
+      setFilteredPartners(reliefPartners.filter(p =>
+        p.reliefCategories?.includes(selectedFund.category!) ||
+        (p as any).reliefCategory === selectedFund.category
+      ));
+    } else {
+      setFilteredPartners(reliefPartners);
+    }
+  }, [assignmentForm.beneficiaryFundId, beneficiaryFunds, reliefPartners]);
+
   const partnerStats = useMemo(() => {
     const stats: Record<
       string,
@@ -166,7 +181,6 @@ export default function BeneficiaryDashboard() {
     if (!profile?.uid) return;
     const { beneficiaryFundId, reliefPartnerId, amount, category, purpose } = assignmentForm;
 
-    const selectedFund = beneficiaryFunds.find((bf) => bf.id === beneficiaryFundId);
     const selectedPartner = reliefPartners.find((p) => p.uid === reliefPartnerId);
 
     if (!selectedFund || !selectedPartner) {
@@ -388,20 +402,26 @@ export default function BeneficiaryDashboard() {
               className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
             >
               <option value="">Select a partner...</option>
-              {reliefPartners.map((partner) => (
+              {filteredPartners.map((partner) => (
                 <option key={partner.uid} value={partner.uid}>
                   {partner.displayName || partner.email} ({partner.organization || 'Individual'})
-                  {(partner as any).reliefCategory && ` - ${(partner as any).reliefCategory}`}
                 </option>
               ))}
             </select>
+            {assignmentForm.beneficiaryFundId && !selectedFund?.category && (
+              <p className="text-[10px] text-orange-500 mt-1">⚠️ Selecting a fund with a category will filter partners.</p>
+            )}
             {assignmentForm.reliefPartnerId && reliefPartners.find(p => p.uid === assignmentForm.reliefPartnerId) && (
               <div className="mt-2 text-xs text-gray-400 bg-[#1a1a2e] p-2 rounded">
                 {(() => {
                   const partner = reliefPartners.find(p => p.uid === assignmentForm.reliefPartnerId) as any;
                   return (
                     <>
-                      {partner.reliefCategory && <p>📁 Category: <span className="text-blue-400">{partner.reliefCategory}</span></p>}
+                      {(partner.reliefCategories || partner.reliefCategory) && (
+                        <p>📁 Categories: <span className="text-blue-400">
+                          {partner.reliefCategories ? partner.reliefCategories.join(', ') : partner.reliefCategory}
+                        </span></p>
+                      )}
                       {partner.walletAddress && <p>💰 Wallet: <span className="text-green-400 font-mono text-xs break-all">{partner.walletAddress.substring(0, 10)}...{partner.walletAddress.substring(partner.walletAddress.length - 8)}</span></p>}
                     </>
                   );

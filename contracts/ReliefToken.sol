@@ -16,7 +16,7 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
     bytes32 public constant BENEFICIARY_ROLE = keccak256("BENEFICIARY_ROLE");
     bytes32 public constant RELIEF_PARTNER_ROLE = keccak256("RELIEF_PARTNER_ROLE");
     // Beneficiary information
-    struct Beneficiary {
+    struct Beneficiary { 
         bool isWhitelisted;
         uint256 totalReceived;
         mapping(string => uint256) categoryLimits; // Category => max spending limit

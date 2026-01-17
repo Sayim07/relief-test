@@ -1,477 +1,319 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { transactionService } from '@/lib/firebase/services';
-import { Shield, TrendingUp, Users, Wallet, ArrowLeft, CheckCircle, Clock } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+} from 'recharts';
+import { Shield, TrendingUp, BarChart3, Activity, ArrowLeft, CheckCircle, Clock } from 'lucide-react';
 import Link from 'next/link';
-import { getDocs, collection, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { getProvider } from '@/lib/web3/provider';
-import { getReliefTokenContractReadOnly } from '@/lib/contracts/reliefToken';
-import { ethers } from 'ethers';
-import PageLoader from '@/components/ui/PageLoader';
-
-interface Transaction {
-  id: string;
-  txHash: string;
-  from: string;
-  to: string;
-  amount: string;
-  category: string;
-  description?: string;
-  timestamp: any;
-  status?: 'verified' | 'pending';
-  confirmed?: boolean;
-  type?: 'donation' | 'distribution';
-}
+import { donationService, reliefRequestService } from '@/lib/firebase/services';
+import { format } from 'date-fns';
 
 export default function AuditPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [categoryData, setCategoryData] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [stats, setStats] = useState({
-    totalDonated: 0,
-    totalDistributed: 0,
-    transactionCount: 0,
+    totalETH: 0,
+    totalRequests: 0,
     verifiedCount: 0,
   });
 
   useEffect(() => {
-    const initializeAuditData = async () => {
-      try {
-        setLoading(true);
-
-        // Step 1: Load Firestore history
-        const firestoreTxs = await loadFirestoreHistory();
-
-        // Step 2: Load blockchain events
-        const blockchainTxs = await loadBlockchainHistory();
-
-        // Step 3: Merge and deduplicate
-        const merged = mergeAndDeduplicateTransactions(firestoreTxs, blockchainTxs);
-
-        // Step 4: Update UI
-        updateTransactions(merged);
-
-        // Step 5: Set up real-time listeners
-        setupRealtimeListeners();
-
-        setLoading(false);
-      } catch (error) {
-        console.error('Error initializing audit data:', error);
-        setLoading(false);
-      }
-    };
-
-    initializeAuditData();
+    loadAuditData();
   }, []);
 
-  const loadFirestoreHistory = async (): Promise<Transaction[]> => {
+  const loadAuditData = async () => {
     try {
-      const txs = await transactionService.getAll();
-      return txs.map((tx: any) => ({
-        id: tx.id || tx.txHash,
-        txHash: tx.txHash || '',
-        from: tx.from || '',
-        to: tx.to || '',
-        amount: tx.amount?.toString() || '0',
-        category: tx.category || 'General',
-        description: tx.description || '',
-        timestamp: tx.timestamp,
-        status: tx.status || 'pending',
-        confirmed: tx.confirmed || false,
-        type: tx.type || 'donation',
-      }));
-    } catch (error) {
-      console.error('Error loading Firestore history:', error);
-      return [];
-    }
-  };
+      setLoading(true);
+      const [donations, requests] = await Promise.all([
+        donationService.getAll(),
+        reliefRequestService.getAll()
+      ]);
 
-  const loadBlockchainHistory = async (): Promise<Transaction[]> => {
-    try {
-      const provider = getProvider();
-      if (!provider) {
-        console.warn('Provider not available for blockchain history');
-        return [];
-      }
+      // 1. Line Chart Data (ETH Flow over time)
+      const sortedDonations = [...donations]
+        .filter(d => d.status === 'verified' || d.status === 'distributed' || d.status === 'pending')
+        .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0));
 
-      const contract = getReliefTokenContractReadOnly(provider);
-      const blockchainTxs: Transaction[] = [];
+      let runningTotal = 0;
+      const flow = sortedDonations.map(d => {
+        runningTotal += parseFloat(d.amountDisplay || '0');
+        return {
+          name: d.createdAt ? format(d.createdAt, 'MMM d') : 'N/A',
+          amount: runningTotal,
+          fullDate: d.createdAt ? format(d.createdAt, 'PP') : 'N/A'
+        };
+      });
+      setChartData(flow);
 
-      // Query DonationRecorded events
-      try {
-        const donationFilter = contract.filters.DonationRecorded?.();
-        if (donationFilter) {
-          const donationEvents = await contract.queryFilter(donationFilter, 0, 'latest');
-          donationEvents.forEach((event: any) => {
-            blockchainTxs.push({
-              id: event.transactionHash,
-              txHash: event.transactionHash,
-              from: event.args?.donor || '',
-              to: event.args?.recipient || '',
-              amount: event.args?.amount?.toString() || '0',
-              category: event.args?.category || 'General',
-              timestamp: new Date(event.blockNumber * 1000),
-              status: 'verified',
-              confirmed: true,
-              type: 'donation',
-            });
-          });
-        }
-      } catch (err) {
-        console.warn('Error querying DonationRecorded events:', err);
-      }
+      // 2. Bar Chart Data (Category-wise Distribution)
+      const categoryMap: Record<string, number> = {};
+      donations.forEach(d => {
+        const cat = d.category || 'General';
+        categoryMap[cat] = (categoryMap[cat] || 0) + parseFloat(d.amountDisplay || '0');
+      });
+      const categories = Object.entries(categoryMap).map(([name, value]) => ({ name, value }));
+      setCategoryData(categories);
 
-      // Query ReliefDistributed events
-      try {
-        const distributionFilter = contract.filters.ReliefDistributed?.();
-        if (distributionFilter) {
-          const distributionEvents = await contract.queryFilter(distributionFilter, 0, 'latest');
-          distributionEvents.forEach((event: any) => {
-            blockchainTxs.push({
-              id: event.transactionHash,
-              txHash: event.transactionHash,
-              from: '',
-              to: event.args?.to || '',
-              amount: event.args?.amount?.toString() || '0',
-              category: event.args?.category || 'General',
-              timestamp: new Date(event.blockNumber * 1000),
-              status: 'verified',
-              confirmed: true,
-              type: 'distribution',
-            });
-          });
-        }
-      } catch (err) {
-        console.warn('Error querying ReliefDistributed events:', err);
-      }
-
-      return blockchainTxs;
-    } catch (error) {
-      console.error('Error loading blockchain history:', error);
-      return [];
-    }
-  };
-
-  const mergeAndDeduplicateTransactions = (
-    firestoreTxs: Transaction[],
-    blockchainTxs: Transaction[]
-  ): Transaction[] => {
-    const txMap = new Map<string, Transaction>();
-
-    // Add all Firestore transactions
-    firestoreTxs.forEach((tx) => {
-      if (tx.txHash) {
-        txMap.set(tx.txHash.toLowerCase(), tx);
-      }
-    });
-
-    // Merge blockchain transactions and update status
-    blockchainTxs.forEach((blockTx) => {
-      const key = blockTx.txHash.toLowerCase();
-      if (txMap.has(key)) {
-        // Update existing Firestore tx with blockchain data
-        const existing = txMap.get(key)!;
-        existing.status = 'verified';
-        existing.confirmed = true;
-      } else {
-        // Add new blockchain transaction
-        txMap.set(key, blockTx);
-      }
-    });
-
-    // Convert to array and sort by timestamp (newest first)
-    return Array.from(txMap.values()).sort((a, b) => {
-      const aTime = a.timestamp?.toMillis?.() || new Date(a.timestamp).getTime() || 0;
-      const bTime = b.timestamp?.toMillis?.() || new Date(b.timestamp).getTime() || 0;
-      return bTime - aTime;
-    });
-  };
-
-  const updateTransactions = (txs: Transaction[]) => {
-    setTransactions(txs);
-
-    // Calculate stats
-    let totalDonated = 0;
-    let totalDistributed = 0;
-    let verifiedCount = 0;
-
-    txs.forEach((tx) => {
-      const amount = parseFloat(tx.amount) || 0;
-      if (tx.type === 'donation') {
-        totalDonated += amount;
-      } else if (tx.type === 'distribution') {
-        totalDistributed += amount;
-      }
-      if (tx.status === 'verified' || tx.confirmed) {
-        verifiedCount += 1;
-      }
-    });
-
-    setStats({
-      totalDonated,
-      totalDistributed,
-      transactionCount: txs.length,
-      verifiedCount,
-    });
-  };
-
-  const setupRealtimeListeners = () => {
-    // Real-time Firestore listener
-    if (transactionService.onSnapshot) {
-      const firestoreUnsubscribe = transactionService.onSnapshot((newTxs: any[]) => {
-        const formattedTxs = newTxs.map((tx: any) => ({
-          id: tx.id || tx.txHash,
-          txHash: tx.txHash || '',
-          from: tx.from || '',
-          to: tx.to || '',
-          amount: tx.amount?.toString() || '0',
-          category: tx.category || 'General',
-          description: tx.description || '',
-          timestamp: tx.timestamp,
-          status: tx.status || 'pending',
-          confirmed: tx.confirmed || false,
-          type: tx.type || 'donation',
-        }));
-        updateTransactions(formattedTxs);
+      // 3. Status Badges & Stats
+      setTransactions(donations.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)));
+      setStats({
+        totalETH: runningTotal,
+        totalRequests: requests.length,
+        verifiedCount: requests.filter(r => r.status === 'verified').length
       });
 
-      return () => firestoreUnsubscribe();
+    } catch (error) {
+      console.error('Error loading audit data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const formatAddress = (address: string) => {
-    if (!address || address === '') return 'N/A';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  const formatAddress = (addr: string) => {
+    if (!addr) return 'N/A';
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
-  const formatDate = (timestamp: any) => {
-    if (!timestamp) return 'N/A';
-    try {
-      let date;
-      if (timestamp.toDate) {
-        date = timestamp.toDate();
-      } else if (timestamp instanceof Date) {
-        date = timestamp;
-      } else {
-        date = new Date(timestamp);
-      }
-      return date.toLocaleString();
-    } catch (err) {
-      return 'N/A';
-    }
-  };
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
-  const formatAmount = (amount: any) => {
-    const num = parseFloat(amount) || 0;
-    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
-
-  const getStatusBadge = (tx: Transaction) => {
-    const isVerified = tx.status === 'verified' || tx.confirmed;
-    return isVerified ? (
-      <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-semibold border border-green-500/50 animate-in fade-in">
-        <CheckCircle className="w-4 h-4" />
-        Verified
-      </span>
-    ) : (
-      <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-semibold border border-yellow-500/50 animate-pulse">
-        <Clock className="w-4 h-4" />
-        Pending
-      </span>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-black to-black">
+        <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-4" />
+        <p className="text-gray-500 font-black uppercase tracking-[0.3em] text-xs">Synchronizing Audit Trail</p>
+      </div>
     );
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-black text-white selection:bg-blue-500/30">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Shield className="w-8 h-8 text-blue-500" />
-            <span className="text-xl font-bold text-white">ReliefChain</span>
+      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/80 border-b border-[#392e4e]">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="p-2 bg-blue-600/10 rounded-xl border border-blue-500/20 group-hover:bg-blue-600/20 transition-all">
+              <Shield className="w-6 h-6 text-blue-500" />
+            </div>
+            <span className="text-xl font-black tracking-tight">ReliefChain</span>
           </Link>
           <Link
-            href="/auth"
-            className="text-slate-300 hover:text-white font-medium transition-colors flex items-center gap-2"
+            href="/"
+            className="flex items-center gap-2 text-gray-500 hover:text-white font-bold transition-all px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back
+            <ArrowLeft className="w-4 h-4" /> Back
           </Link>
         </div>
       </nav>
 
-      {/* Main Content */}
-      <div className="pt-28 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-3">
-              <h1 className="text-5xl font-black text-white">
-                ReliefChain Public Audit Trail
-              </h1>
-              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/50 rounded-full">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-semibold text-emerald-400">Live</span>
+      <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto space-y-12">
+        {/* Hero Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+          <div className="animate-in fade-in slide-in-from-left-4 duration-1000">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Live Ledger</span>
               </div>
             </div>
-            <p className="text-xl text-slate-400">
-              Every donation and fund transfer is publicly verifiable on the blockchain
-            </p>
-            <p className="text-sm text-slate-500 mt-2">
-              🔗 Connected to blockchain & Firestore • Auto-updating in real-time
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-gray-500">
+              Audit Trail
+            </h1>
+            <p className="text-gray-400 mt-4 text-lg font-medium max-w-2xl leading-relaxed italic">
+              Real-time systematic intelligence fetching ledger data from Ethereum Sepolia & Firebase.
+              Complete transparency for every donation.
             </p>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid md:grid-cols-4 gap-6 mb-12">
-            <div className="bg-linear-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-blue-500/50 transition-all">
-              <div className="flex items-center justify-between mb-4">
-                <TrendingUp className="w-6 h-6 text-blue-500" />
-                <span className="text-xs font-semibold text-blue-400">TOTAL DONATED</span>
-              </div>
-              <div className="text-3xl font-black text-white">₹{formatAmount(stats.totalDonated)}</div>
-              <p className="text-sm text-slate-400 mt-2">Verified donations</p>
+          <div className="grid grid-cols-2 gap-4 w-full md:w-auto animate-in fade-in slide-in-from-right-4 duration-1000">
+            <div className="p-6 bg-[#0a0a1a] border border-[#392e4e] rounded-3xl group hover:border-blue-500/50 transition-all">
+              <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2">Total Donated</p>
+              <p className="text-3xl font-black">₹{stats.totalETH.toLocaleString()}</p>
             </div>
-
-            <div className="bg-linear-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-green-500/50 transition-all">
-              <div className="flex items-center justify-between mb-4">
-                <Wallet className="w-6 h-6 text-green-500" />
-                <span className="text-xs font-semibold text-green-400">DISTRIBUTED</span>
-              </div>
-              <div className="text-3xl font-black text-white">₹{formatAmount(stats.totalDistributed)}</div>
-              <p className="text-sm text-slate-400 mt-2">Relief funds delivered</p>
+            <div className="p-6 bg-[#0a0a1a] border border-[#392e4e] rounded-3xl group hover:border-green-500/50 transition-all">
+              <p className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-2">Verified Tickets</p>
+              <p className="text-3xl font-black text-green-400">{stats.verifiedCount} <span className="text-xs text-gray-500">/ {stats.totalRequests}</span></p>
             </div>
+          </div>
+        </div>
 
-            <div className="bg-linear-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-purple-500/50 transition-all">
-              <div className="flex items-center justify-between mb-4">
-                <Users className="w-6 h-6 text-purple-500" />
-                <span className="text-xs font-semibold text-purple-400">TRANSACTIONS</span>
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-200">
+          {/* Main Chart - Line */}
+          <div className="lg:col-span-2 bg-[#0a0a1a]/50 backdrop-blur-xl border border-[#392e4e] p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[80px] rounded-full -mr-20 -mt-20 group-hover:bg-blue-600/10 transition-colors"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-black flex items-center gap-3">
+                  <TrendingUp className="w-5 h-5 text-blue-500" /> ETH FLOW OVER TIME
+                </h3>
               </div>
-              <div className="text-3xl font-black text-white">{stats.transactionCount}</div>
-              <p className="text-sm text-slate-400 mt-2">Total on-chain txs</p>
-            </div>
-
-            <div className="bg-linear-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-emerald-500/50 transition-all">
-              <div className="flex items-center justify-between mb-4">
-                <CheckCircle className="w-6 h-6 text-emerald-500" />
-                <span className="text-xs font-semibold text-emerald-400">VERIFIED</span>
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <defs>
+                      <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#4a3e5e"
+                      fontSize={11}
+                      fontWeight="black"
+                      axisLine={false}
+                      tickLine={false}
+                      dy={15}
+                    />
+                    <YAxis
+                      stroke="#4a3e5e"
+                      fontSize={11}
+                      fontWeight="black"
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v) => `₹${v.toLocaleString()}`}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#0a0a1a', border: '1px solid #392e4e', borderRadius: '20px', fontWeight: 'bold' }}
+                      itemStyle={{ color: '#3b82f6' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="amount"
+                      stroke="#3b82f6"
+                      strokeWidth={5}
+                      dot={{ r: 6, fill: '#3b82f6', strokeWidth: 4, stroke: "#000" }}
+                      activeDot={{ r: 8, strokeWidth: 0, fill: '#60a5fa' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
-              <div className="text-3xl font-black text-white">{stats.verifiedCount}</div>
-              <p className="text-sm text-slate-400 mt-2">Blockchain confirmed</p>
             </div>
           </div>
 
-          {/* Transactions Table */}
-          {loading && <PageLoader />}
-          {!loading && transactions.length === 0 ? (
-            <div className="bg-slate-800/50 rounded-xl border border-slate-600/50 p-12 text-center">
-              <TrendingUp className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-400">
-                No transactions recorded yet. New transactions will appear here automatically.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="mb-4 text-sm text-slate-400">
-                Displaying <span className="text-blue-400 font-semibold">{transactions.length}</span> blockchain transactions • Auto-updating
+          {/* Side Chart - Bar */}
+          <div className="bg-[#0a0a1a]/50 backdrop-blur-xl border border-[#392e4e] p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/5 blur-[80px] rounded-full -mr-20 -mt-20 group-hover:bg-purple-600/10 transition-colors"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-black flex items-center gap-3">
+                  <BarChart3 className="w-5 h-5 text-purple-500" /> CATEGORY SPLIT
+                </h3>
               </div>
-              <div className="bg-slate-800/50 border border-slate-600/50 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-slate-900/50 border-b border-slate-600/50">
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                          Transaction Hash
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                          From
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                          To
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                          Amount
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                          Category
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                          Timestamp
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-600/30">
-                      {transactions.map((tx, idx) => (
-                        <tr
-                          key={tx.id || idx}
-                          className="hover:bg-slate-700/30 transition-colors border-slate-600/20"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="font-mono text-sm text-blue-400 hover:text-blue-300 cursor-pointer">
-                              {tx.txHash ? formatAddress(tx.txHash) : 'N/A'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="font-mono text-sm text-slate-300">{formatAddress(tx.from)}</span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="font-mono text-sm text-slate-300">{formatAddress(tx.to)}</span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="font-semibold text-white">
-                              ₹{formatAmount(tx.amount)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-3 py-1 bg-slate-700 text-slate-200 rounded-md text-xs font-medium">
-                              {tx.category || 'General'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {getStatusBadge(tx)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
-                            {formatDate(tx.timestamp)}
-                          </td>
-                        </tr>
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={categoryData} layout="vertical" margin={{ left: 20, right: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" horizontal={false} />
+                    <XAxis type="number" hide />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      stroke="#4a3e5e"
+                      fontSize={10}
+                      fontWeight="black"
+                      axisLine={false}
+                      tickLine={false}
+                      width={80}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#0a0a1a', border: '1px solid #392e4e', borderRadius: '20px' }}
+                      cursor={{ fill: '#ffffff05' }}
+                    />
+                    <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={34}>
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Footer Info */}
-          <div className="mt-12 bg-linear-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-8">
-            <h3 className="text-lg font-semibold text-white mb-2">🔗 On-Chain Transparency</h3>
-            <p className="text-slate-300 mb-4">
-              All ReliefChain transactions are recorded on the blockchain and can be independently verified.
-              This audit trail ensures complete transparency and accountability in disaster relief operations.
-            </p>
-            <div className="flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2 text-slate-300">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span>Immutable records</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span>Public verification</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span>Real-time settlement</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span>Role-based access</span>
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Recent Ledger Entries */}
+        <div className="bg-[#0a0a1a]/50 backdrop-blur-xl border border-[#392e4e] rounded-[3rem] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-500">
+          <div className="p-8 sm:p-10 border-b border-[#392e4e] flex items-center justify-between flex-wrap gap-4">
+            <h3 className="text-2xl font-black flex items-center gap-4">
+              <Activity className="w-6 h-6 text-blue-500" /> SYSTEM LEDGER
+            </h3>
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] bg-black/40 px-4 py-2 rounded-full border border-[#392e4e]">
+                Last 50 Records
+              </span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-black/40 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-[#392e4e]">
+                  <th className="px-10 py-6">Verification</th>
+                  <th className="px-10 py-6">Ledger Identity</th>
+                  <th className="px-10 py-6 text-right">Volume</th>
+                  <th className="px-10 py-6">Sector</th>
+                  <th className="px-10 py-6">Record Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#392e4e]">
+                {transactions.slice(0, 50).map((tx, idx) => (
+                  <tr key={tx.id || idx} className="hover:bg-blue-600/5 transition-all group cursor-default">
+                    <td className="px-10 py-8">
+                      <div className={`flex items-center gap-2 px-4 py-2 rounded-full w-fit text-[10px] font-black uppercase tracking-widest shadow-lg ${tx.status === 'verified' || tx.status === 'distributed'
+                          ? 'bg-green-500/10 text-green-500 border border-green-500/20 shadow-green-500/5'
+                          : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 shadow-yellow-500/5'
+                        }`}>
+                        {tx.status === 'verified' || tx.status === 'distributed' ? <CheckCircle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                        {tx.status}
+                      </div>
+                    </td>
+                    <td className="px-10 py-8">
+                      <div className="font-mono text-xs text-blue-400 group-hover:text-blue-300 transition-colors font-bold">
+                        {tx.transactionHash ? formatAddress(tx.transactionHash) : 'Pending Settlement...'}
+                      </div>
+                      <div className="text-[9px] text-gray-500 mt-2 uppercase font-black tracking-widest flex items-center gap-2">
+                        <span className="opacity-50">Origin:</span> {tx.donorId ? formatAddress(tx.donorId) : 'System Pool'}
+                      </div>
+                    </td>
+                    <td className="px-10 py-8 text-right">
+                      <span className="text-2xl font-black text-white group-hover:scale-110 transition-transform origin-right inline-block">
+                        ₹{parseFloat(tx.amountDisplay || '0').toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="px-10 py-8">
+                      <span className={`px-4 py-2 rounded-2xl text-[10px] font-black border uppercase tracking-widest ${idx % 2 === 0 ? 'bg-blue-500/5 border-blue-500/20 text-blue-400' : 'bg-purple-500/5 border-purple-500/20 text-purple-400'
+                        }`}>
+                        {tx.category || 'General'}
+                      </span>
+                    </td>
+                    <td className="px-10 py-8 text-xs text-gray-500 font-bold uppercase tracking-tighter">
+                      {tx.createdAt ? format(tx.createdAt, 'PPp') : 'N/A'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {transactions.length === 0 && (
+            <div className="text-center py-40 border-t border-[#392e4e]">
+              <Activity className="w-16 h-16 text-gray-800 mx-auto mb-6 animate-pulse" />
+              <p className="text-gray-600 font-black uppercase tracking-[0.5em] text-xs">Awaiting Global Records</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
