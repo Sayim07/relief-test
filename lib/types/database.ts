@@ -21,6 +21,21 @@ export type AssignmentStatus = 'pending' | 'active' | 'completed' | 'cancelled';
 export type ReceiptStatus = 'pending' | 'verified' | 'rejected';
 
 /**
+ * Donation Verification Details
+ */
+export interface DonationVerification {
+  method: 'auto' | 'manual' | 'blockchain';
+  status: 'pending' | 'verified' | 'rejected';
+  riskScore: number; // 0-100, where 0-30 = low, 31-70 = medium, 71-100 = high
+  verifiedAt?: Date;
+  verifiedBy?: string; // Admin UID
+  verificationNotes?: string;
+  transactionVerified?: boolean; // Whether blockchain transaction was verified
+  donorVerified?: boolean; // Whether donor is KYC verified
+  amountVerified?: boolean; // Whether amount matches blockchain
+}
+
+/**
  * Donation - Donor contributions
  */
 export interface Donation {
@@ -35,11 +50,33 @@ export interface Donation {
   category?: string; // Optional category
   description?: string;
   status: DonationStatus;
+  
+  // Donation Type (Path A: direct to relief partner, Path B: general pool)
+  donationType: 'direct' | 'general'; // 'direct' = to relief partner, 'general' = to pool
+  reliefPartnerId?: string; // If donationType === 'direct'
+  
+  // Blockchain & Transaction
   transactionHash?: string; // Blockchain transaction hash
-  verifiedBy?: string; // Admin UID who verified
-  verifiedAt?: Date;
+  blockNumber?: number;
+  confirmations?: number;
+  gasUsed?: string; // Gas used in wei
+  
+  // Verification
+  verification: DonationVerification;
+  
+  // Legacy fields (for backward compatibility)
+  verifiedBy?: string; // Admin UID who verified (deprecated, use verification.verifiedBy)
+  verifiedAt?: Date; // (deprecated, use verification.verifiedAt)
+  
+  // Rejection/Dispute
   rejectedReason?: string;
+  rejectedBy?: string;
+  rejectedAt?: Date;
+  
+  // Distribution tracking
   distributedAt?: Date;
+  distributedTo?: string[]; // Relief partner IDs (if general donation)
+  
   createdAt: Date;
   updatedAt: Date;
   metadata?: {

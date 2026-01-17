@@ -11,6 +11,13 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 
+// Re-export all services from the services folder
+export { userService } from './services/userService';
+export { donationService } from './services/donationService';
+export { donationVerificationService, type DonationVerificationLog } from './services/donationVerificationService';
+export { reliefPartnerAssignmentService } from './services/reliefPartnerAssignmentService';
+export type { BeneficiaryData, TransactionData } from './services/index';
+
 // Types
 export interface BeneficiaryData {
   walletAddress: string;

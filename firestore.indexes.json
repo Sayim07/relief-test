@@ -1,4 +1,53 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "donations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "donorId", "order": "ASCENDING"},
+        {"fieldPath": "createdAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "donations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "status", "order": "ASCENDING"},
+        {"fieldPath": "createdAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "donations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "status", "order": "ASCENDING"},
+        {"fieldPath": "updatedAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "donationVerificationLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "donationId", "order": "ASCENDING"},
+        {"fieldPath": "performedAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "reliefPartnerAssignments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "beneficiaryId", "order": "ASCENDING"},
+        {"fieldPath": "assignedAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "reliefPartnerAssignments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "reliefPartnerId", "order": "ASCENDING"},
+        {"fieldPath": "assignedAt", "order": "DESCENDING"}
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

@@ -1,0 +1,236 @@
+// Firestore Security Rules for Donation System
+// Deploy these rules to your Firestore database
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isDonor() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'donor';
+    }
+    
+    function isBeneficiary() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'beneficiary';
+    }
+    
+    function isReliefPartner() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'relief-partner';
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Anyone can read public user data
+      allow read: if isAuth();
+      
+      // Users can only create/update/delete their own profile
+      allow create: if isAuth() && isOwner(userId);
+      allow update: if isAuth() && isOwner(userId) && !request.resource.data.role.changes(resource.data.role);
+      allow delete: if isAuth() && isOwner(userId) && isAdmin();
+    }
+    
+    // Donations collection
+    match /donations/{donationId} {
+      // Donors can read their own donations
+      allow read: if isAuth() && (
+        isDonor() && resource.data.donorId == request.auth.uid ||
+        isAdmin() ||
+        isBeneficiary() ||
+        isReliefPartner()
+      );
+      
+      // Donors can create donations
+      allow create: if isAuth() && isDonor() && 
+        request.resource.data.donorId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.verification.status == 'pending' &&
+        request.resource.data.donationType in ['direct', 'general'];
+      
+      // Admin can update (verify/reject)
+      allow update: if isAuth() && isAdmin() &&
+        (
+          // Allow status changes
+          resource.data.status != request.resource.data.status ||
+          // Allow verification updates
+          resource.data.verification.status != request.resource.data.verification.status ||
+          // Allow notes
+          request.resource.data.verification.verificationNotes != resource.data.verification.verificationNotes
+        );
+      
+      // Only admins can delete
+      allow delete: if isAuth() && isAdmin();
+    }
+    
+    // Donation Verification Logs collection
+    match /donationVerificationLogs/{logId} {
+      // Admins can read all logs
+      allow read: if isAuth() && isAdmin();
+      
+      // Admins can create logs
+      allow create: if isAuth() && isAdmin() &&
+        request.resource.data.performedBy == request.auth.uid;
+      
+      // Logs are immutable (can't update or delete)
+      allow update: if false;
+      allow delete: if false;
+    }
+    
+    // Relief Partner Assignments collection
+    match /reliefPartnerAssignments/{assignmentId} {
+      // Beneficiaries can read their allocations
+      allow read: if isAuth() && (
+        isBeneficiary() && resource.data.beneficiaryId == request.auth.uid ||
+        isReliefPartner() && resource.data.reliefPartnerId == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Beneficiaries can create assignments
+      allow create: if isAuth() && isBeneficiary() &&
+        request.resource.data.beneficiaryId == request.auth.uid &&
+        request.resource.data.assignedBy == request.auth.uid &&
+        request.resource.data.status == 'pending';
+      
+      // Relief partners can update status (mark as completed)
+      allow update: if isAuth() && isReliefPartner() &&
+        resource.data.reliefPartnerId == request.auth.uid &&
+        (
+          request.resource.data.status in ['active', 'completed'] ||
+          request.resource.data.spentAmount > 0
+        );
+      
+      // Admins can update
+      allow update: if isAuth() && isAdmin();
+      
+      // Only admins can delete
+      allow delete: if isAuth() && isAdmin();
+    }
+    
+    // Relief Funds collection
+    match /reliefFunds/{fundId} {
+      // Everyone can read relief funds
+      allow read: if isAuth();
+      
+      // Only admins can create/update/delete
+      allow create: if isAuth() && isAdmin() &&
+        request.resource.data.createdBy == request.auth.uid;
+      
+      allow update: if isAuth() && isAdmin();
+      allow delete: if isAuth() && isAdmin();
+    }
+    
+    // Beneficiary Funds collection
+    match /beneficiaryFunds/{fundId} {
+      // Beneficiaries can read their funds
+      allow read: if isAuth() && (
+        isBeneficiary() && resource.data.beneficiaryId == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Only admins can create/update
+      allow create: if isAuth() && isAdmin() &&
+        request.resource.data.assignedBy == request.auth.uid;
+      
+      allow update: if isAuth() && isAdmin();
+      allow delete: if isAuth() && isAdmin();
+    }
+    
+    // Receipts collection
+    match /receipts/{receiptId} {
+      // Users can read receipts related to them
+      allow read: if isAuth() && (
+        resource.data.payerId == request.auth.uid ||
+        resource.data.recipientId == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Users can create receipts for their transactions
+      allow create: if isAuth() &&
+        request.resource.data.payerId == request.auth.uid;
+      
+      // Users can update their receipts
+      allow update: if isAuth() && (
+        resource.data.payerId == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Only admins can delete
+      allow delete: if isAuth() && isAdmin();
+    }
+    
+    // Categories collection (public read, admin write)
+    match /categories/{categoryId} {
+      allow read: if isAuth();
+      
+      allow create, update, delete: if isAuth() && isAdmin();
+    }
+    
+    // Transactions collection
+    match /transactions/{txId} {
+      // Users can read their transactions
+      allow read: if isAuth() && (
+        resource.data.from == request.auth.uid ||
+        resource.data.to == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Only admins can write
+      allow create, update, delete: if isAuth() && isAdmin();
+    }
+    
+    // Catch-all deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+/*
+DEPLOYMENT INSTRUCTIONS:
+
+1. Go to Firebase Console
+2. Select your project
+3. Navigate to Firestore Database
+4. Click on "Rules" tab
+5. Replace existing rules with the above
+6. Click "Publish"
+
+FIRESTORE INDEXES REQUIRED:
+
+1. donations collection:
+   - donorId + createdAt (Descending)
+   - status + createdAt (Descending)
+   - status + updatedAt (Descending)
+
+2. donationVerificationLogs collection:
+   - donationId + performedAt (Descending)
+
+3. reliefPartnerAssignments collection:
+   - beneficiaryId + assignedAt (Descending)
+   - reliefPartnerId + assignedAt (Descending)
+
+HOW TO CREATE INDEXES:
+
+1. Go to Firebase Console
+2. Select your project
+3. Navigate to Firestore Database
+4. Click on "Indexes" tab
+5. Click "Create Index"
+6. Enter collection name
+7. Add fields with sort direction
+8. Click "Create"
+
+NOTE: Firebase will auto-suggest indexes when you run queries that need them.
+Check the Firebase logs if you see "Index not found" errors and create the suggested indexes.
+*/
