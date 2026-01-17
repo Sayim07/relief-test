@@ -20,12 +20,26 @@ export default function FundDistribution() {
   const [amount, setAmount] = useState('');
   const [distributing, setDistributing] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [ethToInrRate, setEthToInrRate] = useState<number>(280000); // Fallback rate
 
   useEffect(() => {
     if (profile?.uid) {
       loadData();
+      fetchEthToInrRate();
     }
   }, [profile]);
+
+  const fetchEthToInrRate = async () => {
+    try {
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr');
+      const data = await response.json();
+      if (data.ethereum && data.ethereum.inr) {
+        setEthToInrRate(data.ethereum.inr);
+      }
+    } catch (error) {
+      console.log('Failed to fetch ETH rate, using fallback');
+    }
+  };
 
   const handleConnectWallet = async () => {
     setConnecting(true);
@@ -69,11 +83,24 @@ export default function FundDistribution() {
       
       // Calculate total available funds from verified donations
       const totalFunds = donationsData.reduce((total: number, donation: any) => {
-        return total + (donation.amount || 0);
+        // Convert from Wei to ETH if the amount is in Wei, then convert to INR
+        let donationAmount = donation.amount || 0;
+        
+        // If amount is very large (likely in Wei), convert to ETH first
+        if (donationAmount > 1000000) {
+          // Convert Wei to ETH (divide by 1e18), then use amountDisplay if available
+          if (donation.amountDisplay) {
+            donationAmount = parseFloat(donation.amountDisplay);
+          } else {
+            donationAmount = donationAmount / 1e18;
+          }
+        }
+        
+        return total + donationAmount;
       }, 0);
       
       setTotalAvailableFunds(totalFunds);
-      console.log('Total available funds from verified donations:', totalFunds);
+      console.log('Total available funds from verified donations (in display units):', totalFunds);
       
     } catch (error) {
       console.error('Error loading distribution data:', error);
@@ -98,7 +125,7 @@ export default function FundDistribution() {
     try {
       // Check if we have enough verified funds
       if (amountNum > totalAvailableFunds) {
-        throw new Error(`Insufficient verified funds. Available: ₹${totalAvailableFunds.toFixed(2)}, Requested: ₹${amountNum}`);
+        throw new Error(`Insufficient verified funds. Available: ${totalAvailableFunds.toFixed(6)} ETH, Requested: ${amountNum} ETH`);
       }
 
       const beneficiary = beneficiaries.find(b => b.uid === selectedBeneficiary);
@@ -162,7 +189,7 @@ export default function FundDistribution() {
           reliefFundId: 'verified_donations_pool', // Special ID for direct distributions
           amount: Number(amountWei),
           amountDisplay: amount,
-          currency: 'INR',
+          currency: 'ETH',
           category: 'general',
           status: 'active',
           assignedBy: profile.uid,
@@ -185,14 +212,23 @@ export default function FundDistribution() {
         for (const donation of verifiedDonations) {
           if (remainingToDistribute <= 0) break;
           
-          const donationAmount = donation.amount || 0;
-          if (donationAmount > 0 && donation.status === 'verified') {
-            // Mark this donation as distributed (or partially distributed)
+          // Get the display amount (what user sees) vs stored amount (Wei)
+          let donationDisplayAmount = donation.amount || 0;
+          if (donation.amountDisplay) {
+            donationDisplayAmount = parseFloat(donation.amountDisplay);
+          } else if (donationDisplayAmount > 1000000) {
+            // Convert Wei to display amount
+            donationDisplayAmount = donationDisplayAmount / 1e18;
+          }
+          
+          if (donationDisplayAmount > 0 && donation.status === 'verified') {
+            // Mark this donation as distributed
             await donationService.update(donation.id, {
               status: 'distributed',
               distributedAt: new Date()
             });
-            remainingToDistribute -= donationAmount;
+            remainingToDistribute -= donationDisplayAmount;
+            console.log(`Marked donation ${donation.id} as distributed (${donationDisplayAmount} units)`);
           }
         }
         
@@ -286,7 +322,7 @@ export default function FundDistribution() {
             </p>
             <div className="text-sm text-gray-500">
               <p>Verified Donations: {verifiedDonations.length}</p>
-              <p>Total Available: ₹{totalAvailableFunds.toFixed(2)}</p>
+              <p>Total Available: {totalAvailableFunds.toFixed(6)} ETH</p>
             </div>
           </div>
         </div>
@@ -312,7 +348,7 @@ export default function FundDistribution() {
               <div>User Role: {profile?.role || 'Not loaded'}</div>
               <div>User Email: {profile?.email || 'Not loaded'}</div>
               <div>Verified Donations: {verifiedDonations.length}</div>
-              <div>Total Available Funds: ₹{totalAvailableFunds.toFixed(2)}</div>
+              <div>Total Available Funds: {totalAvailableFunds.toFixed(6)} ETH (₹{(totalAvailableFunds * ethToInrRate).toFixed(2)} INR)</div>
               <div>Available Beneficiaries: {beneficiaries.length}</div>
               <div>Wallet Connected: {isConnected ? 'Yes' : 'No'}</div>
             </div>
@@ -326,13 +362,36 @@ export default function FundDistribution() {
           <p className="text-xs text-gray-300">
             This form allows you to distribute relief funds directly to <strong>beneficiaries only</strong>. 
             Beneficiaries are individuals who have registered for assistance and have been verified by the system.
-            Funds come from <strong>verified donations</strong> and will be transferred directly to their connected wallet addresses.
+            Funds come from <strong>verified donations in ETH</strong> and will be transferred directly to their connected wallet addresses.
           </p>
           <div className="mt-3 p-3 bg-green-900/20 border border-green-900/50 rounded">
             <p className="text-xs text-green-300">
-              <strong>Available from Verified Donations:</strong> ₹{totalAvailableFunds.toFixed(2)} 
+              <strong>Available from Verified Donations:</strong> {totalAvailableFunds.toFixed(6)} ETH (₹{(totalAvailableFunds * ethToInrRate).toFixed(2)} INR) 
               <span className="ml-2 text-gray-300">({verifiedDonations.length} donations)</span>
             </p>
+            {process.env.NODE_ENV === 'development' && verifiedDonations.length > 0 && (
+              <details className="mt-2">
+                <summary className="text-xs text-blue-300 cursor-pointer">Show donation details</summary>
+                <div className="mt-2 space-y-1">
+                  {verifiedDonations.slice(0, 5).map((donation, idx) => {
+                    const displayAmount = donation.amountDisplay 
+                      ? parseFloat(donation.amountDisplay)
+                      : donation.amount > 1000000 
+                        ? donation.amount / 1e18 
+                        : donation.amount;
+                    return (
+                      <div key={idx} className="text-xs text-gray-400 flex justify-between">
+                        <span>Donation {idx + 1}:</span>
+                        <span>{displayAmount.toFixed(6)} ETH</span>
+                      </div>
+                    );
+                  })}
+                  {verifiedDonations.length > 5 && (
+                    <div className="text-xs text-gray-500">...and {verifiedDonations.length - 5} more</div>
+                  )}
+                </div>
+              </details>
+            )}
           </div>
         </div>
         <div className="space-y-4">
@@ -365,25 +424,25 @@ export default function FundDistribution() {
 
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">
-              Amount (INR) *
+              Amount (ETH) *
             </label>
             <div className="relative">
-              <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-mono">ETH</span>
               <input
                 type="number"
-                step="0.01"
-                min="0.01"
+                step="0.000001"
+                min="0.000001"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[#0a0a1a] border border-[#392e4e] rounded-lg text-white focus:ring-2 focus:ring-blue-500"
-                placeholder="0.00"
+                className="w-full pl-12 pr-4 py-2 bg-[#0a0a1a] border border-[#392e4e] rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                placeholder="0.001000"
               />
             </div>
             {totalAvailableFunds > 0 && amount && (
               <div className="mt-2 p-3 bg-gray-900/50 border border-gray-600 rounded-lg">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Available from verified donations:</span>
-                  <span className="text-green-400">₹{totalAvailableFunds.toFixed(2)}</span>
+                  <span className="text-green-400">{totalAvailableFunds.toFixed(6)} ETH</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">After distribution:</span>
@@ -392,7 +451,7 @@ export default function FundDistribution() {
                       ? 'text-blue-400' 
                       : 'text-red-400'
                   }`}>
-                    ₹{(totalAvailableFunds - parseFloat(amount || '0')).toFixed(2)}
+                    {(totalAvailableFunds - parseFloat(amount || '0')).toFixed(6)} ETH
                   </span>
                 </div>
                 {totalAvailableFunds < parseFloat(amount || '0') && (
@@ -489,7 +548,7 @@ export default function FundDistribution() {
             <div className="flex justify-between">
               <span className="text-gray-400">Available Amount:</span>
               <span className="font-medium text-blue-400">
-                ₹{totalAvailableFunds.toFixed(2)}
+                {totalAvailableFunds.toFixed(6)} ETH
               </span>
             </div>
             <div className="flex justify-between">
@@ -507,11 +566,11 @@ export default function FundDistribution() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Amount:</span>
-              <span className="font-semibold text-lg text-blue-400">₹{amount} INR</span>
+              <span className="font-semibold text-lg text-blue-400">{amount} ETH</span>
             </div>
             <div className="mt-3 p-3 bg-green-900/20 border border-green-900/50 rounded">
               <p className="text-xs text-green-300">
-                💡 This amount will be deducted from verified donations and transferred to the beneficiary's wallet.
+                💡 This amount will be deducted from verified donations and transferred to the beneficiary's wallet in ETH.
               </p>
             </div>
           </div>

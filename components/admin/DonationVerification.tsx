@@ -19,10 +19,39 @@ export default function DonationVerification() {
   const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ethToInrRate, setEthToInrRate] = useState<number>(280000); // Fallback rate ~280,000 INR per ETH
+
+  // Function to convert ETH amount to INR for display
+  const formatDonationAmount = (donation: Donation) => {
+    const ethAmount = donation.amountDisplay ? parseFloat(donation.amountDisplay) : 
+                     donation.amount > 1000000 ? donation.amount / 1e18 : donation.amount;
+    const inrAmount = ethAmount * ethToInrRate;
+    
+    return {
+      ethAmount: ethAmount.toFixed(6),
+      inrAmount: inrAmount.toFixed(2),
+    };
+  };
 
   useEffect(() => {
     loadPendingDonations();
+    fetchEthToInrRate();
   }, [showAll]);
+
+  const fetchEthToInrRate = async () => {
+    try {
+      // Fetch current ETH to INR rate from a free API
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr');
+      const data = await response.json();
+      if (data.ethereum && data.ethereum.inr) {
+        setEthToInrRate(data.ethereum.inr);
+        console.log('Updated ETH to INR rate:', data.ethereum.inr);
+      }
+    } catch (error) {
+      console.log('Failed to fetch ETH rate, using fallback:', error);
+      // Keep the fallback rate
+    }
+  };
 
   const loadPendingDonations = async () => {
     try {
@@ -132,7 +161,13 @@ export default function DonationVerification() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">Donation Verification</h2>
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-white">Donation Verification</h2>
+          <div className="text-right">
+            <p className="text-sm text-gray-400">ETH Rate: ₹{ethToInrRate.toLocaleString()} INR</p>
+            <p className="text-xs text-gray-500">Live rate from CoinGecko</p>
+          </div>
+        </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowAll(!showAll)}
@@ -192,16 +227,21 @@ export default function DonationVerification() {
 
         return (
           <div className="space-y-4">
-            {showAll && (
-              <div className="bg-blue-900/10 border border-blue-900/30 rounded-lg p-4">
-                <p className="text-sm text-blue-400">
-                  Showing all donations ({allDonations.length} total).
-                  Pending: {pendingDonations.length} |
-                  Verified: {allDonations.filter(d => d.status === 'verified').length} |
-                  Rejected: {allDonations.filter(d => d.status === 'rejected').length}
-                </p>
-              </div>
-            )}
+      {showAll && (
+        <div className="bg-blue-900/10 border border-blue-900/30 rounded-lg p-4">
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-blue-400">
+              Showing all donations ({allDonations.length} total).
+              Pending: {pendingDonations.length} |
+              Verified: {allDonations.filter(d => d.status === 'verified').length} |
+              Rejected: {allDonations.filter(d => d.status === 'rejected').length}
+            </p>
+            <p className="text-xs text-gray-400">
+              ETH Rate: ₹{ethToInrRate.toLocaleString()} INR
+            </p>
+          </div>
+        </div>
+      )}
             {donationsToShow.map((donation) => (
               <div
                 key={donation.id}
@@ -211,9 +251,14 @@ export default function DonationVerification() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <Clock className="w-5 h-5 text-yellow-500" />
-                      <h3 className="font-semibold text-lg text-white">
-                        {donation.amountDisplay} {donation.currency}
-                      </h3>
+                      <div>
+                        <h3 className="font-semibold text-lg text-white">
+                          ₹{formatDonationAmount(donation).inrAmount} INR
+                        </h3>
+                        <p className="text-sm text-gray-400">
+                          {formatDonationAmount(donation).ethAmount} ETH
+                        </p>
+                      </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${donation.status === 'pending' ? 'bg-yellow-900/30 text-yellow-500' :
                         donation.status === 'verified' ? 'bg-green-900/30 text-green-400' :
                           donation.status === 'rejected' ? 'bg-red-900/30 text-red-400' :
@@ -442,7 +487,7 @@ function ReceiptQRCode({ receipt }: { receipt: Receipt }) {
 
   return (
     <div className="text-center">
-      <img src={qrImage} alt="Receipt QR Code" className="mx-auto max-w-[150px] bg-white p-2 rounded-lg" />
+      <img src={qrImage} alt="Receipt QR Code" className="mx-auto max-w-37.5 bg-white p-2 rounded-lg" />
       <p className="text-xs text-purple-400 mt-2">Scan to verify receipt</p>
     </div>
   );
