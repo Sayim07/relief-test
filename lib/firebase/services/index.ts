@@ -8,6 +8,7 @@ export { userService } from './userService';
 export { donationService } from './donationService';
 export { donationVerificationService, type DonationVerificationLog } from './donationVerificationService';
 export { reliefPartnerAssignmentService } from './reliefPartnerAssignmentService';
+export { reliefFundService } from './reliefFundService';
 export { beneficiaryFundService } from './beneficiaryFundService';
 export { categoryService } from './categoryService';
 export { receiptService } from './receiptService';

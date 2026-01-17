@@ -73,8 +73,8 @@ export default function WalletConnect() {
       </button>
       {error && (
         <div className="flex items-start gap-2 text-red-600 text-sm bg-red-50 p-2 rounded">
-          <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <span className="break-words">{error}</span>
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span className="wrap-break-word">{error}</span>
         </div>
       )}
     </div>

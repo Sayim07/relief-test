@@ -283,7 +283,7 @@ export default function AuditPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -325,7 +325,7 @@ export default function AuditPage() {
 
           {/* Stats Grid */}
           <div className="grid md:grid-cols-4 gap-6 mb-12">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-blue-500/50 transition-all">
+            <div className="bg-linear-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-blue-500/50 transition-all">
               <div className="flex items-center justify-between mb-4">
                 <TrendingUp className="w-6 h-6 text-blue-500" />
                 <span className="text-xs font-semibold text-blue-400">TOTAL DONATED</span>
@@ -334,7 +334,7 @@ export default function AuditPage() {
               <p className="text-sm text-slate-400 mt-2">Verified donations</p>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-green-500/50 transition-all">
+            <div className="bg-linear-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-green-500/50 transition-all">
               <div className="flex items-center justify-between mb-4">
                 <Wallet className="w-6 h-6 text-green-500" />
                 <span className="text-xs font-semibold text-green-400">DISTRIBUTED</span>
@@ -343,7 +343,7 @@ export default function AuditPage() {
               <p className="text-sm text-slate-400 mt-2">Relief funds delivered</p>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-purple-500/50 transition-all">
+            <div className="bg-linear-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-purple-500/50 transition-all">
               <div className="flex items-center justify-between mb-4">
                 <Users className="w-6 h-6 text-purple-500" />
                 <span className="text-xs font-semibold text-purple-400">TRANSACTIONS</span>
@@ -352,7 +352,7 @@ export default function AuditPage() {
               <p className="text-sm text-slate-400 mt-2">Total on-chain txs</p>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-emerald-500/50 transition-all">
+            <div className="bg-linear-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50 hover:border-emerald-500/50 transition-all">
               <div className="flex items-center justify-between mb-4">
                 <CheckCircle className="w-6 h-6 text-emerald-500" />
                 <span className="text-xs font-semibold text-emerald-400">VERIFIED</span>
@@ -447,7 +447,7 @@ export default function AuditPage() {
           )}
 
           {/* Footer Info */}
-          <div className="mt-12 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-8">
+          <div className="mt-12 bg-linear-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-8">
             <h3 className="text-lg font-semibold text-white mb-2">🔗 On-Chain Transparency</h3>
             <p className="text-slate-300 mb-4">
               All ReliefChain transactions are recorded on the blockchain and can be independently verified.

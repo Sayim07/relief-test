@@ -7,7 +7,9 @@ import {
   updateDoc, 
   query, 
   where,
-  Timestamp 
+  Timestamp,
+  onSnapshot,
+  orderBy
 } from 'firebase/firestore';
 import { db } from './config';
 
@@ -16,7 +18,6 @@ export { userService } from './services/userService';
 export { donationService } from './services/donationService';
 export { donationVerificationService, type DonationVerificationLog } from './services/donationVerificationService';
 export { reliefPartnerAssignmentService } from './services/reliefPartnerAssignmentService';
-export type { BeneficiaryData, TransactionData } from './services/index';
 
 // Types
 export interface BeneficiaryData {
@@ -123,6 +124,18 @@ export const transactionService = {
     return querySnapshot.docs
       .map(doc => doc.data() as TransactionData)
       .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+  },
+
+  onSnapshot(callback: (transactions: TransactionData[]) => void) {
+    const q = query(
+      collection(db, 'transactions'),
+      orderBy('timestamp', 'desc')
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+      const transactions = snapshot.docs.map(doc => doc.data() as TransactionData);
+      callback(transactions);
+    });
   },
 };
 
