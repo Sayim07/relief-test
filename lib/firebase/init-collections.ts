@@ -68,12 +68,12 @@ export async function initializeCategories(): Promise<void> {
     console.log('✅ Categories initialization complete!');
   } catch (error: any) {
     if (error?.code === 'permission-denied') {
-      console.error('❌ Firestore permission denied!');
-      console.error('Please update Firestore security rules:');
+      console.warn('⚠️ Firestore write permission denied for categories collection.');
+      console.warn('ℹ️ App will use default categories. To enable category persistence:');
       const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'your-project-id';
-      console.error(`1. Go to: https://console.firebase.google.com/project/${projectId}/firestore/rules`);
-      console.error('2. Copy rules from firestore.rules file or FIRESTORE_RULES_FIX.md');
-      console.error('3. Click Publish');
+      console.warn(`   1. Go to: https://console.firebase.google.com/project/${projectId}/firestore/rules`);
+      console.warn('   2. Update rules to allow authenticated users to write to categories');
+      console.warn('   3. Or create the categories collection manually in Firebase Console');
     } else {
       console.error('❌ Error initializing categories:', error);
     }

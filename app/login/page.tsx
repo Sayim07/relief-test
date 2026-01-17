@@ -8,6 +8,10 @@ import { Shield, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import PixelCard from '@/components/PixelCard';
 
+
+
+
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -51,6 +55,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#060010] flex items-center justify-center p-4">
       {/* Animated background elements */}
+
+
       <div className="absolute top-20 left-10 w-72 h-72 bg-blue-900/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-20 right-10 w-72 h-72 bg-purple-900/20 rounded-full blur-[120px] pointer-events-none"></div>
 

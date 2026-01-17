@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useWallet } from '@/hooks/useWallet';
 import { reliefPartnerAssignmentService } from '@/lib/firebase/services/reliefPartnerAssignmentService';
 import { receiptService } from '@/lib/firebase/services/receiptService';
+import { categoryService } from '@/lib/firebase/services';
 import type {
   ReliefPartnerAssignment,
   Receipt,
@@ -35,6 +36,7 @@ interface SpendingFormState {
   amount: string;
   description: string;
   recipient: string;
+  category: string;
 }
 
 export default function ReliefPartnerDashboard() {
@@ -50,11 +52,13 @@ export default function ReliefPartnerDashboard() {
   });
   const [assignments, setAssignments] = useState<ReliefPartnerAssignment[]>([]);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [spendingForm, setSpendingForm] = useState<SpendingFormState>({
     assignmentId: '',
     amount: '',
     description: '',
     recipient: '',
+    category: '',
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -70,10 +74,13 @@ export default function ReliefPartnerDashboard() {
     try {
       setLoading(true);
 
-      const [assignments, receipts] = await Promise.all([
+      const [assignments, receipts, categories_data] = await Promise.all([
         reliefPartnerAssignmentService.getByReliefPartner(profile.uid).catch(() => []),
         receiptService.getByPayer(profile.uid).catch(() => []),
+        categoryService.getAll().catch(() => []),
       ]);
+
+      setCategories(categories_data);
 
       const assignedTotal = assignments.reduce(
         (sum, a) => sum + (a.amount || 0),
@@ -112,7 +119,7 @@ export default function ReliefPartnerDashboard() {
 
   const handleSubmitSpending = async () => {
     if (!profile?.uid) return;
-    const { assignmentId, amount, description } = spendingForm;
+    const { assignmentId, amount, description, category } = spendingForm;
 
     const assignment = assignments.find((a) => a.id === assignmentId);
     if (!assignment) {
@@ -128,6 +135,11 @@ export default function ReliefPartnerDashboard() {
 
     if (numericAmount > assignment.remainingAmount) {
       alert('Amount exceeds remaining assignment balance');
+      return;
+    }
+
+    if (!category) {
+      alert('Please select a category');
       return;
     }
 
@@ -152,7 +164,7 @@ export default function ReliefPartnerDashboard() {
           const tx = await contract.transferWithCategory(
             spendingForm.recipient,
             amountWei,
-            assignment.category || 'general'
+            category
           );
           const receipt = await tx.wait();
           transactionHash = receipt?.hash || tx.hash;
@@ -198,6 +210,7 @@ export default function ReliefPartnerDashboard() {
         amount: '',
         description: '',
         recipient: '',
+        category: '',
       });
 
       await loadDashboard();
@@ -382,6 +395,28 @@ export default function ReliefPartnerDashboard() {
                   className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
                   placeholder="Amount spent"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">
+                  Category
+                </label>
+                <select
+                  value={spendingForm.category}
+                  onChange={(e) =>
+                    setSpendingForm((prev) => ({
+                      ...prev,
+                      category: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
+                >
+                  <option value="">Select category...</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">

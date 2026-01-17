@@ -391,9 +391,23 @@ export default function BeneficiaryDashboard() {
               {reliefPartners.map((partner) => (
                 <option key={partner.uid} value={partner.uid}>
                   {partner.displayName || partner.email} ({partner.organization || 'Individual'})
+                  {(partner as any).reliefCategory && ` - ${(partner as any).reliefCategory}`}
                 </option>
               ))}
             </select>
+            {assignmentForm.reliefPartnerId && reliefPartners.find(p => p.uid === assignmentForm.reliefPartnerId) && (
+              <div className="mt-2 text-xs text-gray-400 bg-[#1a1a2e] p-2 rounded">
+                {(() => {
+                  const partner = reliefPartners.find(p => p.uid === assignmentForm.reliefPartnerId) as any;
+                  return (
+                    <>
+                      {partner.reliefCategory && <p>📁 Category: <span className="text-blue-400">{partner.reliefCategory}</span></p>}
+                      {partner.walletAddress && <p>💰 Wallet: <span className="text-green-400 font-mono text-xs break-all">{partner.walletAddress.substring(0, 10)}...{partner.walletAddress.substring(partner.walletAddress.length - 8)}</span></p>}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           <div>

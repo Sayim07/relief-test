@@ -9,6 +9,7 @@ export interface UserProfile {
   phoneNumber?: string;
   organization?: string;
   location?: string;
+  reliefCategory?: string; // For relief partners: the category they specialize in
   verified: boolean;
   createdAt: Date;
   updatedAt: Date;

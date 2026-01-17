@@ -17,22 +17,28 @@ export default function FirebaseInitializer() {
         const isConnected = await checkFirestoreConnection();
         
         if (!isConnected) {
-          console.warn('⚠️ Firestore connection check failed. Make sure Firebase is configured.');
+          console.warn('⚠️ Firestore connection check failed. Using default categories.');
           return;
         }
 
         // Initialize categories if they don't exist
-        await initializeCategories();
+        // This will silently fail if permissions are denied - app uses default categories as fallback
+        try {
+          await initializeCategories();
+        } catch (initError: any) {
+          if (initError?.code === 'permission-denied') {
+            console.warn('⚠️ Firestore write permission denied. Using default categories from app.');
+            console.warn('ℹ️ To enable category management, update Firestore security rules.');
+          } else {
+            throw initError;
+          }
+        }
       } catch (error: any) {
         // Log error details for debugging
         if (error?.code === 'permission-denied') {
-          console.error('❌ Firestore permission denied. Please check security rules:');
-          console.error('   1. Go to Firebase Console → Firestore → Rules');
-          console.error('   2. Use development rules (see FIRESTORE_RULES_FIX.md)');
-          console.error('   3. Click Publish');
+          console.warn('⚠️ Firestore permission denied. App will use default categories.');
         } else {
           console.log('ℹ️ Firebase initialization skipped (configuration may be pending)');
-          console.log('Error:', error?.message || error);
         }
       }
     };
