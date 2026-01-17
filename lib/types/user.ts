@@ -10,7 +10,9 @@ export interface UserProfile {
   organization?: string;
   location?: string;
   reliefCategories?: string[]; // For relief partners: the categories they specialize in
+  reliefPartnerKey?: string; // Unique key for verified partners
   verified: boolean;
+  verificationTimestamp?: Date; // When the user was verified by an admin
   createdAt: Date;
   updatedAt: Date;
   metadata?: {

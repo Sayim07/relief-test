@@ -21,6 +21,11 @@ import {
   ArrowRight,
   ClipboardList,
   LayoutDashboard,
+  ShieldAlert,
+  ShieldCheck,
+  Lock,
+  Clock,
+  ArrowUpRight
 } from 'lucide-react';
 import ReliefTicketForm from '@/components/relief/ReliefTicketForm';
 import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
@@ -244,8 +249,55 @@ export default function ReliefPartnerDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      <div className="flex flex-col items-center justify-center py-32 gap-4">
+        <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin shadow-[0_0_20px_rgba(37,99,235,0.2)]" />
+        <p className="text-gray-500 font-bold animate-pulse uppercase tracking-widest text-xs">Syncing Partner Data...</p>
+      </div>
+    );
+  }
+
+  if (!profile?.verified) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-2xl w-full bg-[#0a0a1a]/80 backdrop-blur-2xl border border-[#392e4e] rounded-[3rem] p-12 text-center relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500/50 to-transparent" />
+
+          <div className="relative z-10 space-y-8">
+            <div className="w-24 h-24 bg-yellow-500/10 border border-yellow-500/20 rounded-3xl flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(234,179,8,0.1)]">
+              <ShieldAlert className="w-12 h-12 text-yellow-500" />
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="text-4xl font-black text-white tracking-tight">Account Pending Audit</h2>
+              <p className="text-gray-400 text-lg font-medium leading-relaxed max-w-md mx-auto">
+                Your relief partner credentials are currently under review by our administration team.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+              {[
+                { label: 'Wallet Audit', status: 'In Progress' },
+                { label: 'Specialty Review', status: 'Pending' },
+                { label: 'Key Generation', status: 'Queued' }
+              ].map((item, i) => (
+                <div key={i} className="p-4 bg-black/40 border border-[#392e4e] rounded-2xl">
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{item.label}</p>
+                  <p className="text-xs font-bold text-yellow-500/80 italic">{item.status}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-4">
+              <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold text-gray-400">
+                <Clock className="w-4 h-4" /> Estimated response: 24-48 hours
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -254,10 +306,16 @@ export default function ReliefPartnerDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-white tracking-tight">Partner Console</h1>
-          <p className="text-gray-400 mt-2 font-medium italic">
-            Raise relief tickets or manage your assigned emergency funds.
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-4xl font-black text-white tracking-tight">Partner Console</h1>
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-500">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span className="text-[9px] font-black uppercase tracking-widest">Verified Partner</span>
+            </div>
+          </div>
+          <p className="text-gray-400 font-medium italic flex items-center gap-2">
+            System Identity: <span className="text-blue-400 font-mono not-italic font-bold">{profile.reliefPartnerKey}</span>
           </p>
         </div>
 

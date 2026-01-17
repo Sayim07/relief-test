@@ -13,10 +13,17 @@ import {
     AlertTriangle,
     User,
     Search,
-    Check
+    Check,
+    ShieldCheck,
+    AlertCircle,
+    Zap,
+    Key,
+    IndianRupee,
+    Wallet
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminRequestsPage() {
     const { profile } = useAuth();
@@ -24,6 +31,19 @@ export default function AdminRequestsPage() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('pending_verification');
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Verification Modal State
+    const [verifyingReq, setVerifyingReq] = useState<ReliefRequest | null>(null);
+    const [otp, setOtp] = useState('');
+    const [otpError, setOtpError] = useState(false);
+    const [verificationStep, setVerificationStep] = useState<'otp' | 'approve'>('otp');
+    const [approvalData, setApprovalData] = useState({ amount: '5000', wallet: '' });
+
+    // Duplicate Detection Logic
+    const phoneCounts = requests.reduce((acc: Record<string, number>, req) => {
+        acc[req.phone] = (acc[req.phone] || 0) + 1;
+        return acc;
+    }, {});
 
     useEffect(() => {
         loadRequests();
@@ -43,23 +63,56 @@ export default function AdminRequestsPage() {
 
     const handleAction = async (id: string, status: 'verified' | 'rejected') => {
         if (!profile?.uid) return;
-        try {
-            if (status === 'verified') {
-                const amount = prompt('Enter approved amount (INR):', '5000');
-                const wallet = prompt('Enter beneficiary wallet address (Optional):', '');
-                if (amount === null) return;
 
-                await reliefRequestService.updateStatus(id, status, profile.uid, {
-                    approvedAmount: parseFloat(amount),
-                    beneficiaryWallet: wallet || undefined
-                });
-            } else {
+        if (status === 'rejected') {
+            if (!confirm('Are you sure you want to reject this request?')) return;
+            try {
                 await reliefRequestService.updateStatus(id, status, profile.uid);
+                await loadRequests();
+            } catch (error) {
+                console.error('Error rejecting request:', error);
+                alert('Failed to reject request');
             }
+            return;
+        }
+
+        // For verification, open the modal
+        const req = requests.find(r => r.id === id);
+        if (req) {
+            setVerifyingReq(req);
+            setVerificationStep('otp');
+            setOtp('');
+            setOtpError(false);
+            setApprovalData({ amount: '5000', wallet: req.beneficiaryWallet || '' });
+        }
+    };
+
+    const confirmVerification = async () => {
+        if (!verifyingReq || !profile?.uid) return;
+
+        try {
+            setLoading(true);
+            await reliefRequestService.updateStatus(verifyingReq.id, 'verified', profile.uid, {
+                approvedAmount: parseFloat(approvalData.amount),
+                beneficiaryWallet: approvalData.wallet || undefined
+            });
+            setVerifyingReq(null);
             await loadRequests();
         } catch (error) {
-            console.error('Error updating request:', error);
-            alert('Failed to update request');
+            console.error('Error verifying request:', error);
+            alert('Failed to verify request');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleOTPSubmit = () => {
+        // Simulate OTP check (any 6 digit code works for demo)
+        if (otp === '123456' || otp.length === 6) {
+            setVerificationStep('approve');
+            setOtpError(false);
+        } else {
+            setOtpError(true);
         }
     };
 
@@ -119,8 +172,8 @@ export default function AdminRequestsPage() {
                                 >
                                     <div className="absolute top-0 right-0 p-8 flex gap-2">
                                         <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${req.urgency === 'high' ? 'bg-red-500/10 text-red-500 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]' :
-                                                req.urgency === 'medium' ? 'bg-orange-500/10 text-orange-400 border border-orange-400/20' :
-                                                    'bg-blue-500/10 text-blue-400 border border-blue-400/20'
+                                            req.urgency === 'medium' ? 'bg-orange-500/10 text-orange-400 border border-orange-400/20' :
+                                                'bg-blue-500/10 text-blue-400 border border-blue-400/20'
                                             }`}>
                                             {req.urgency} Urgency
                                         </div>
@@ -131,16 +184,29 @@ export default function AdminRequestsPage() {
                                             <div className="space-y-2">
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-3 h-3 rounded-full animate-pulse ${req.status === 'verified' ? 'bg-green-500' :
-                                                            req.status === 'rejected' ? 'bg-red-500' :
-                                                                'bg-yellow-500'
+                                                        req.status === 'rejected' ? 'bg-red-500' :
+                                                            'bg-yellow-500'
                                                         }`} />
                                                     <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
                                                         {req.status.replace('_', ' ')}
                                                     </span>
+                                                    {req.status === 'verified' && (
+                                                        <span className="flex items-center gap-1 text-[9px] font-black bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded border border-blue-500/20 uppercase tracking-tighter">
+                                                            <Zap className="w-3 h-3" /> On-Chain Ready
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                <h3 className="text-3xl font-black flex items-center gap-3 group-hover:text-blue-400 transition-colors">
-                                                    {req.name}
-                                                </h3>
+                                                <div className="flex items-center gap-4">
+                                                    <h3 className="text-3xl font-black group-hover:text-blue-400 transition-colors">
+                                                        {req.name}
+                                                    </h3>
+                                                    {phoneCounts[req.phone] > 1 && (
+                                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full text-red-500">
+                                                            <AlertCircle className="w-3.5 h-3.5" />
+                                                            <span className="text-[10px] font-black uppercase tracking-widest">{phoneCounts[req.phone] - 1} Potential Duplicate</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <div className="flex flex-wrap gap-6 text-gray-400 font-bold">
                                                     <p className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer">
                                                         <Phone className="w-4 h-4 text-blue-500" /> {req.phone}
@@ -171,7 +237,7 @@ export default function AdminRequestsPage() {
                                                         onClick={() => handleAction(req.id, 'verified')}
                                                         className="w-full lg:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-green-900/20 active:scale-95 group/btn"
                                                     >
-                                                        <Check className="w-5 h-5 group-hover/btn:scale-125 transition-transform" /> VERIFY
+                                                        <ShieldCheck className="w-5 h-5 group-hover/btn:scale-125 transition-transform" /> VERIFY
                                                     </button>
                                                     <button
                                                         onClick={() => handleAction(req.id, 'rejected')}
@@ -192,7 +258,9 @@ export default function AdminRequestsPage() {
                                                             </p>
                                                         </div>
                                                     ) : (
-                                                        <p className="text-[10px] font-bold text-gray-600 italic">No wallet linked yet</p>
+                                                        <p className="text-[10px] font-bold text-blue-500/70 italic flex items-center gap-1">
+                                                            <Clock className="w-3 h-3" /> Pending Wallet Link
+                                                        </p>
                                                     )}
                                                 </div>
                                             )}
@@ -211,6 +279,125 @@ export default function AdminRequestsPage() {
                     )}
                 </div>
             </DashboardLayout>
+
+            {/* Verification Modal */}
+            <AnimatePresence>
+                {verifyingReq && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setVerifyingReq(null)}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="relative w-full max-w-lg bg-[#0a0a1a] border border-[#392e4e] rounded-[2.5rem] shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-8 sm:p-10">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="p-3 bg-blue-600/10 rounded-xl border border-blue-500/20">
+                                        <ShieldCheck className="w-6 h-6 text-blue-500" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-black text-white">Verification Center</h2>
+                                        <p className="text-xs text-gray-500 uppercase font-black tracking-widest mt-1">Legitimacy Audit for {verifyingReq.name}</p>
+                                    </div>
+                                </div>
+
+                                {verificationStep === 'otp' ? (
+                                    <div className="space-y-6">
+                                        <div className="p-6 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
+                                            <p className="text-sm text-gray-400 font-medium leading-relaxed">
+                                                A simulated 6-digit OTP has been sent to <span className="text-blue-400 font-bold">{verifyingReq.phone}</span>.
+                                                Please enter identifying code to confirm possession.
+                                            </p>
+                                            <p className="text-[10px] text-blue-500 font-black uppercase tracking-[0.2em] mt-3">Demo Tip: Enter any 6 digits</p>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="relative">
+                                                <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600" />
+                                                <input
+                                                    type="text"
+                                                    maxLength={6}
+                                                    value={otp}
+                                                    onChange={e => setOtp(e.target.value)}
+                                                    className={`w-full bg-black/50 border ${otpError ? 'border-red-500' : 'border-[#392e4e]'} rounded-2xl pl-12 pr-6 py-4 text-2xl font-black tracking-[0.5em] focus:ring-4 focus:ring-blue-500/10 transition-all text-white outline-none`}
+                                                    placeholder="000000"
+                                                />
+                                            </div>
+                                            {otpError && <p className="text-xs text-red-500 font-bold ml-2 italic">Invalid OTP. Please try again.</p>}
+                                        </div>
+
+                                        <button
+                                            onClick={handleOTPSubmit}
+                                            className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-lg transition-all shadow-xl shadow-blue-900/20 active:scale-95"
+                                        >
+                                            CONFIRM IDENTITY
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Approved Amount (INR)</label>
+                                                <div className="relative">
+                                                    <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                                                    <input
+                                                        type="number"
+                                                        value={approvalData.amount}
+                                                        onChange={e => setApprovalData({ ...approvalData, amount: e.target.value })}
+                                                        className="w-full bg-black/50 border border-[#392e4e] rounded-xl pl-10 pr-4 py-3 text-white font-bold outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Category Bind</label>
+                                                <div className="w-full bg-black/50 border border-[#392e4e] rounded-xl px-4 py-3 text-white font-bold opacity-60">
+                                                    {verifyingReq.category}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Beneficiary Wallet (Optional)</label>
+                                            <div className="relative">
+                                                <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                                                <input
+                                                    type="text"
+                                                    value={approvalData.wallet}
+                                                    onChange={e => setApprovalData({ ...approvalData, wallet: e.target.value })}
+                                                    className="w-full bg-black/50 border border-[#392e4e] rounded-xl pl-10 pr-4 py-3 text-white font-mono text-xs outline-none"
+                                                    placeholder="0x..."
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-4 pt-4">
+                                            <button
+                                                onClick={() => setVerificationStep('otp')}
+                                                className="flex-1 py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-2xl font-black transition-all"
+                                            >
+                                                BACK
+                                            </button>
+                                            <button
+                                                onClick={confirmVerification}
+                                                className="flex-[2] py-4 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-black transition-all shadow-xl shadow-green-900/20"
+                                            >
+                                                APPROVE TICKET
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </AuthGuard>
     );
 }

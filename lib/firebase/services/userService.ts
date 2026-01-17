@@ -28,7 +28,7 @@ export const userService = {
   async create(user: Omit<UserProfile, 'createdAt' | 'updatedAt'>): Promise<void> {
     const collectionName = roleToCollection[user.role];
     const docRef = doc(db, collectionName, user.uid);
-    
+
     try {
       await setDoc(docRef, {
         ...user,
@@ -40,7 +40,7 @@ export const userService = {
       if (user.role === 'admin' && error.code === 'permission-denied') {
         console.warn('Admin creation permission denied. This is expected for the first admin registration.');
         console.warn('Please update your Firestore security rules to allow admin creation, or use the Firebase console to create the first admin manually.');
-        
+
         throw new Error(
           'Admin registration is restricted by Firestore security rules. ' +
           'This is expected security behavior. Please:\n' +
@@ -48,7 +48,7 @@ export const userService = {
           '2. Create the first admin account manually in the Firebase console'
         );
       }
-      
+
       console.error('User creation error:', error);
       throw new Error(error.message || 'Failed to create user profile');
     }
@@ -76,13 +76,14 @@ export const userService = {
     for (const collectionName of Object.values(roleToCollection)) {
       const docRef = doc(db, collectionName, uid);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
         const data = docSnap.data();
         return {
           ...data,
           createdAt: data.createdAt.toDate(),
           updatedAt: data.updatedAt.toDate(),
+          verificationTimestamp: data.verificationTimestamp?.toDate(),
         } as UserProfile;
       }
     }
@@ -97,13 +98,14 @@ export const userService = {
     for (const collectionName of Object.values(roleToCollection)) {
       const q = query(collection(db, collectionName), where('email', '==', email));
       const querySnapshot = await getDocs(q);
-      
+
       if (!querySnapshot.empty) {
         const data = querySnapshot.docs[0].data();
         return {
           ...data,
           createdAt: data.createdAt.toDate(),
           updatedAt: data.updatedAt.toDate(),
+          verificationTimestamp: data.verificationTimestamp?.toDate(),
         } as UserProfile;
       }
     }
@@ -117,13 +119,14 @@ export const userService = {
     const collectionName = roleToCollection[role];
     const q = query(collection(db, collectionName));
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         ...data,
         createdAt: data.createdAt.toDate(),
         updatedAt: data.updatedAt.toDate(),
+        verificationTimestamp: data.verificationTimestamp?.toDate(),
       } as UserProfile;
     });
   },
@@ -149,8 +152,12 @@ export const userService = {
   /**
    * Verify user
    */
-  async verify(uid: string): Promise<void> {
-    await this.update(uid, { verified: true });
+  async verify(uid: string, partnerKey?: string): Promise<void> {
+    await this.update(uid, {
+      verified: true,
+      verificationTimestamp: new Date(),
+      reliefPartnerKey: partnerKey
+    });
   },
 
   /**
