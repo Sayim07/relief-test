@@ -13,4 +13,4 @@ export { reliefFundService } from './reliefFundService';
 export { beneficiaryFundService } from './beneficiaryFundService';
 export { categoryService } from './categoryService';
 export { receiptService } from './receiptService';
-export type { BeneficiaryData, TransactionData } from '../services';
+export { transactionService } from './transactionService';

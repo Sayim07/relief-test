@@ -249,3 +249,15 @@ export interface ReliefRequest {
     [key: string]: any;
   };
 }
+export interface Transaction {
+  id?: string;
+  from: string;
+  to: string;
+  amount: number;
+  category: string;
+  reliefPartnerKey: string;
+  txHash: string;
+  route: 'direct' | 'mediated';
+  status: 'verified';
+  createdAt: Date;
+}

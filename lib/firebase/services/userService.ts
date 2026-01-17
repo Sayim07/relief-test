@@ -132,6 +132,28 @@ export const userService = {
   },
 
   /**
+   * Get verified relief partners by category
+   */
+  async getVerifiedPartnersByCategory(category: string): Promise<UserProfile[]> {
+    const q = query(
+      collection(db, roleToCollection.relief_partner),
+      where('verified', '==', true),
+      where('reliefCategories', 'array-contains', category)
+    );
+    const querySnapshot = await getDocs(q);
+
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        ...data,
+        createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate(),
+        verificationTimestamp: data.verificationTimestamp?.toDate(),
+      } as UserProfile;
+    });
+  },
+
+  /**
    * Update user profile in role-specific collection
    */
   async update(uid: string, updates: Partial<UserProfile>): Promise<void> {
