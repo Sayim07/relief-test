@@ -6,22 +6,67 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper function to get user profile
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
     // Helper function to check if user is admin
     function isAdmin() {
-      return isAuthenticated() && getUserData().role == 'admin';
+      return isAuthenticated() && 
+        (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    // Helper function to check if user is beneficiary
+    function isBeneficiary() {
+      return isAuthenticated() && 
+        (exists(/databases/$(database)/documents/beneficiaries/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/beneficiaries/$(request.auth.uid)).data.role == 'beneficiary');
+    }
+
+    // Helper function to check if user is donor
+    function isDonor() {
+      return isAuthenticated() && 
+        (exists(/databases/$(database)/documents/donors/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/donors/$(request.auth.uid)).data.role == 'donor');
+    }
+
+    // Helper function to check if user is relief partner
+    function isReliefPartner() {
+      return isAuthenticated() && 
+        (exists(/databases/$(database)/documents/relief_partners/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/relief_partners/$(request.auth.uid)).data.role == 'relief_partner');
     }
     
-    // Users collection
-    match /users/{userId} {
+    // Admins collection
+    match /admins/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow list: if isAdmin(); // Allow admins to list all users for beneficiary selection
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Donors collection
+    match /donors/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
       allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow update: if request.auth.uid == userId || isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Beneficiaries collection
+    match /beneficiaries/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if request.auth.uid == userId || isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Relief Partners collection
+    match /relief_partners/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isBeneficiary());
+      allow list: if isAdmin() || isBeneficiary();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if request.auth.uid == userId || isAdmin();
       allow delete: if isAdmin();
     }
     
@@ -29,12 +74,6 @@ service cloud.firestore {
     match /categories/{categoryId} {
       allow read: if true;
       allow write: if isAdmin() || (isAuthenticated() && !exists(/databases/$(database)/documents/categories/$(categoryId)));
-    }
-    
-    // Beneficiaries - Public read for transparency, admin write
-    match /beneficiaries/{beneficiaryId} {
-      allow read: if true;
-      allow write: if isAdmin();
     }
     
     // Transactions - Public read for audit trail

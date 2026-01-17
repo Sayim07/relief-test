@@ -15,6 +15,7 @@ import { db } from './config';
 
 // Re-export all services from the services folder
 export { userService } from './services/userService';
+export { userAccessService } from './services/userAccessService';
 export { donationService } from './services/donationService';
 export { donationVerificationService, type DonationVerificationLog } from './services/donationVerificationService';
 export { reliefPartnerAssignmentService } from './services/reliefPartnerAssignmentService';

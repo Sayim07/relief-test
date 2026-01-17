@@ -80,7 +80,7 @@ export const BeneficiaryFundDistribution: React.FC<{ beneficiaryId: string }> = 
   useEffect(() => {
     const fetchReliefPartners = async () => {
       try {
-        const partners = await userService.getByRole('relief-partner' as any);
+        const partners = await userService.getByRole('relief_partner');
 
         const formattedPartners: ReliefPartnerInfo[] = partners
           .filter((p: any) => p.verified)

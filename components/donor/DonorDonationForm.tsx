@@ -61,7 +61,7 @@ export const DonorDonationForm: React.FC<{ userId: string }> = ({ userId }) => {
     const fetchReliefPartners = async () => {
       try {
         setLoading(true);
-        const partners = await userService.getByRole('relief-partner' as UserRole);
+        const partners = await userService.getByRole('relief_partner');
 
         const formattedPartners: ReliefPartnerInfo[] = partners
           .filter((p: any) => p.verified) // Only show verified partners
