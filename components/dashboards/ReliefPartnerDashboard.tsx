@@ -15,7 +15,7 @@ import {
   Wallet,
   FileText,
   AlertCircle,
-  DollarSign,
+  IndianRupee,
   ShoppingCart,
   Receipt as ReceiptIcon,
   ArrowRight,
@@ -184,7 +184,7 @@ export default function ReliefPartnerDashboard() {
         recipientEmail: assignment.beneficiaryEmail || '',
         recipientName: assignment.beneficiaryName || '',
         amount: numericAmount,
-        amountDisplay: `$${numericAmount.toFixed(2)}`,
+        amountDisplay: `₹${numericAmount.toFixed(2)}`,
         currency: assignment.currency,
         category: assignment.category,
         description: description || assignment.purpose || 'Relief partner spending',
@@ -259,19 +259,19 @@ export default function ReliefPartnerDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Assigned Funds"
-          value={`$${metrics.assignedFunds}`}
-          icon={DollarSign}
+          value={`₹${metrics.assignedFunds}`}
+          icon={IndianRupee}
           subtitle="Total funds assigned to you"
         />
         <MetricCard
           title="Remaining Funds"
-          value={`$${metrics.remainingFunds}`}
+          value={`₹${metrics.remainingFunds}`}
           icon={Wallet}
           subtitle="Available to spend"
         />
         <MetricCard
           title="Total Spent"
-          value={`$${metrics.totalSpent}`}
+          value={`₹${metrics.totalSpent}`}
           icon={ShoppingCart}
           subtitle="Reported spending"
         />
@@ -320,13 +320,13 @@ export default function ReliefPartnerDashboard() {
                   <p className="text-gray-400">
                     Spent:{' '}
                     <span className="font-semibold text-green-400">
-                      ${a.spentAmount.toFixed(2)}
+                      ₹{a.spentAmount.toFixed(2)}
                     </span>
                   </p>
                   <p className="text-gray-400">
                     Remaining:{' '}
                     <span className="font-semibold text-orange-400">
-                      ${a.remainingAmount.toFixed(2)}
+                      ₹{a.remainingAmount.toFixed(2)}
                     </span>
                   </p>
                   <p className="text-xs text-gray-500 mt-1">

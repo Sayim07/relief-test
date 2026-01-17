@@ -10,7 +10,7 @@ import DonationHistory from '@/components/donor/DonationHistory';
 import DonationConfirmation from '@/components/donor/DonationConfirmation';
 import {
   Heart,
-  DollarSign,
+  IndianRupee,
   FileText,
   TrendingUp,
   Wallet,
@@ -139,10 +139,19 @@ export default function DonorDashboard() {
         donorName: profile.displayName,
         amount: parseFloat(data.amount) * 1e18,
         amountDisplay: data.amount,
-        currency: 'USDT',
+        currency: 'INR',
         category: data.category,
         description: data.description,
         status: 'pending',
+        donationType: 'general', // Default to general pool
+        verification: {
+          method: 'auto',
+          status: 'pending',
+          riskScore: 0,
+          transactionVerified: false,
+          donorVerified: false,
+          amountVerified: false,
+        },
         transactionHash: data.transactionHash,
       };
 
@@ -161,7 +170,7 @@ export default function DonorDashboard() {
         payerName: profile.displayName,
         amount: parseFloat(data.amount) * 1e18,
         amountDisplay: data.amount,
-        currency: 'USDT',
+        currency: 'INR',
         category: data.category,
         description: data.description,
         status: 'pending',
@@ -219,7 +228,7 @@ export default function DonorDashboard() {
 
   return (
     <div className="space-y-6 bento-section" ref={gridRef}>
-      <div className="fixed inset-0 pointer-events-none z-[100]">
+      <div className="fixed inset-0 pointer-events-none z-100">
         <GlobalSpotlight gridRef={gridRef} />
       </div>
 
@@ -233,7 +242,7 @@ export default function DonorDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total Donated"
-          value={`$${metrics.totalDonated}`}
+          value={`₹${metrics.totalDonated}`}
           icon={Heart}
           subtitle="All time contributions"
         />

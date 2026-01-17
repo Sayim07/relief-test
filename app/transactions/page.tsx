@@ -95,7 +95,7 @@ export default function TransactionsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
-                          ${tx.amountDisplay || '0.00'} {tx.currency || 'USDT'}
+                          ₹{tx.amountDisplay || '0.00'} {tx.currency || 'INR'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`

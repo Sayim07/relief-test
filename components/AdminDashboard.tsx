@@ -8,7 +8,7 @@ import FundDistribution from './admin/FundDistribution';
 import AdminAnalytics from './admin/AdminAnalytics';
 import {
   CheckCircle,
-  DollarSign,
+  IndianRupee,
   ArrowRight,
   BarChart3,
   Users,
@@ -23,7 +23,7 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: 'verification' as Tab, label: 'Donation Verification', icon: CheckCircle },
-    { id: 'funds' as Tab, label: 'Fund Management', icon: DollarSign },
+    { id: 'funds' as Tab, label: 'Fund Management', icon: IndianRupee },
     { id: 'distribution' as Tab, label: 'Fund Distribution', icon: ArrowRight },
     { id: 'analytics' as Tab, label: 'Analytics', icon: BarChart3 },
   ];

@@ -11,7 +11,7 @@ import FundDistribution from '@/components/admin/FundDistribution';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import {
   Wallet,
-  DollarSign,
+  IndianRupee,
   Users,
   FileText,
   TrendingUp,
@@ -103,7 +103,7 @@ export default function AdminDashboard() {
   const tabs = [
     { id: 'overview' as Tab, label: 'Overview', icon: BarChart3 },
     { id: 'verification' as Tab, label: 'Verification', icon: CheckCircle },
-    { id: 'funds' as Tab, label: 'Funds', icon: DollarSign },
+    { id: 'funds' as Tab, label: 'Funds', icon: IndianRupee },
     { id: 'distribution' as Tab, label: 'Distribution', icon: ArrowRight },
     { id: 'analytics' as Tab, label: 'Analytics', icon: TrendingUp },
   ];
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
             <MetricCard
               title="Funds Distributed"
               value={`$${metrics.totalFundsDistributed}`}
-              icon={DollarSign}
+              icon={IndianRupee}
               subtitle="Total distributed to beneficiaries"
             />
             <MetricCard

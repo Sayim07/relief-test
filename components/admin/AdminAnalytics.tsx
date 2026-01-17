@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { donationService, reliefFundService, beneficiaryFundService, receiptService } from '@/lib/firebase/services/index';
 import { Donation, ReliefFund, BeneficiaryFund, Receipt } from '@/lib/types/database';
-import { TrendingUp, DollarSign, Users, FileText, CheckCircle, Clock, XCircle, Activity } from 'lucide-react';
+import { TrendingUp, IndianRupee, Users, FileText, CheckCircle, Clock, XCircle, Activity } from 'lucide-react';
 
 export default function AdminAnalytics() {
   const [stats, setStats] = useState({
@@ -89,12 +89,12 @@ export default function AdminAnalytics() {
         <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-blue-500" />
+              <IndianRupee className="w-6 h-6 text-blue-500" />
             </div>
             <TrendingUp className="w-5 h-5 text-green-500" />
           </div>
           <h3 className="text-2xl font-bold text-white mb-1">
-            ${stats.totalAmount.toFixed(2)}
+            ₹{stats.totalAmount.toFixed(2)}
           </h3>
           <p className="text-sm text-gray-400">Total Donations</p>
         </div>
@@ -140,11 +140,11 @@ export default function AdminAnalytics() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
           <div className="flex items-center gap-3 mb-4">
-            <DollarSign className="w-8 h-8 text-green-500" />
+            <IndianRupee className="w-8 h-8 text-green-500" />
             <div>
               <p className="text-sm text-gray-400">Total Funds</p>
               <p className="text-2xl font-bold text-white">
-                ${stats.totalFunds.toFixed(2)}
+                ₹{stats.totalFunds.toFixed(2)}
               </p>
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function AdminAnalytics() {
             <div>
               <p className="text-sm text-gray-400">Distributed</p>
               <p className="text-2xl font-bold text-white">
-                ${stats.distributedFunds.toFixed(2)}
+                ₹{stats.distributedFunds.toFixed(2)}
               </p>
             </div>
           </div>
@@ -216,7 +216,7 @@ export default function AdminAnalytics() {
                   <p className="font-medium text-white mb-1">{fund.name}</p>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-400">
-                      ${fund.totalAmountDisplay}
+                      ₹{fund.totalAmountDisplay}
                     </span>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${fund.status === 'active' ? 'bg-green-900/30 text-green-400' :
                         fund.status === 'distributed' ? 'bg-blue-900/30 text-blue-400' :

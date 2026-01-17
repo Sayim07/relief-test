@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { reliefFundService, donationService } from '@/lib/firebase/services/index';
 import { ReliefFund, Donation } from '@/lib/types/database';
-import { Plus, DollarSign, TrendingUp, Users, Loader2, X } from 'lucide-react';
+import { Plus, IndianRupee, TrendingUp, Users, Loader2, X } from 'lucide-react';
 
 export default function FundManagement() {
   const { profile } = useAuth();
@@ -53,7 +53,7 @@ export default function FundManagement() {
         description: newFund.description,
         totalAmount: totalAmount * 1e18, // Convert to wei
         totalAmountDisplay: totalAmount.toFixed(2),
-        currency: 'USDT',
+        currency: 'INR',
         distributedAmount: 0,
         remainingAmount: totalAmount * 1e18,
         status: 'active',
@@ -100,12 +100,12 @@ export default function FundManagement() {
         <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-green-900/30 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-green-500" />
+              <IndianRupee className="w-6 h-6 text-green-500" />
             </div>
             <TrendingUp className="w-5 h-5 text-green-500" />
           </div>
           <h3 className="text-2xl font-bold text-white mb-1">
-            ${totalVerified.toFixed(2)}
+            ₹{totalVerified.toFixed(2)}
           </h3>
           <p className="text-sm text-gray-400">Total Verified Donations</p>
         </div>
@@ -117,7 +117,7 @@ export default function FundManagement() {
             </div>
           </div>
           <h3 className="text-2xl font-bold text-white mb-1">
-            ${totalDistributed.toFixed(2)}
+            ₹{totalDistributed.toFixed(2)}
           </h3>
           <p className="text-sm text-gray-400">Total Distributed</p>
         </div>
@@ -125,11 +125,11 @@ export default function FundManagement() {
         <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-yellow-900/30 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-yellow-500" />
+              <IndianRupee className="w-6 h-6 text-yellow-500" />
             </div>
           </div>
           <h3 className="text-2xl font-bold text-white mb-1">
-            ${totalRemaining.toFixed(2)}
+            ₹{totalRemaining.toFixed(2)}
           </h3>
           <p className="text-sm text-gray-400">Remaining Funds</p>
         </div>
@@ -201,7 +201,7 @@ export default function FundManagement() {
         <h3 className="text-lg font-semibold text-white mb-4">Active Relief Funds</h3>
         {funds.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <DollarSign className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+            <IndianRupee className="w-12 h-12 mx-auto mb-4 text-gray-600" />
             <p>No relief funds created yet</p>
           </div>
         ) : (
@@ -235,19 +235,19 @@ export default function FundManagement() {
                   <div>
                     <p className="text-sm text-gray-400 mb-1">Total Amount</p>
                     <p className="font-semibold text-lg text-white">
-                      ${fund.totalAmountDisplay} {fund.currency}
+                      ₹{fund.totalAmountDisplay} {fund.currency}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-400 mb-1">Distributed</p>
                     <p className="font-semibold text-lg text-blue-400">
-                      ${(parseFloat(fund.distributedAmount.toString()) / 1e18).toFixed(2)}
+                      ₹{(parseFloat(fund.distributedAmount.toString()) / 1e18).toFixed(2)}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-400 mb-1">Remaining</p>
                     <p className="font-semibold text-lg text-green-400">
-                      ${(parseFloat(fund.remainingAmount.toString()) / 1e18).toFixed(2)}
+                      ₹{(parseFloat(fund.remainingAmount.toString()) / 1e18).toFixed(2)}
                     </p>
                   </div>
                 </div>

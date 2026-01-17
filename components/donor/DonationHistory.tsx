@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { donationService, receiptService } from '@/lib/firebase/services/index';
 import { Donation } from '@/lib/types/database';
 import { Receipt } from '@/lib/types/database';
-import { Calendar, DollarSign, FileText, Eye, Loader2, CheckCircle, Clock, XCircle, X, Download } from 'lucide-react';
+import { Calendar, IndianRupee, FileText, Eye, Loader2, CheckCircle, Clock, XCircle, X, Download } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -142,7 +142,7 @@ export default function DonationHistory() {
         <div className="space-y-4">
           {donations.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
-              <DollarSign className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <IndianRupee className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p>No donations yet</p>
             </div>
           ) : (
@@ -154,7 +154,7 @@ export default function DonationHistory() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <DollarSign className="w-5 h-5 text-blue-600" />
+                      <IndianRupee className="w-5 h-5 text-blue-600" />
                       <h3 className="font-semibold text-lg text-white">
                         {donation.amountDisplay} {donation.currency}
                       </h3>
@@ -216,7 +216,7 @@ export default function DonationHistory() {
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-400 mb-2">
                       <div className="flex items-center gap-1">
-                        <DollarSign className="w-4 h-4" />
+                        <IndianRupee className="w-4 h-4" />
                         {receipt.amountDisplay} {receipt.currency}
                       </div>
                       <div className="flex items-center gap-1">

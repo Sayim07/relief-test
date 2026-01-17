@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { categoryService } from '@/lib/firebase/services';
 import type { CategoryDefinition } from '@/lib/firebase/services';
 import { sendDonation } from '@/lib/utils/payment';
-import { DollarSign, FileText, AlertCircle, Loader2, Wallet } from 'lucide-react';
+import { IndianRupee, FileText, AlertCircle, Loader2, Wallet } from 'lucide-react';
 
 interface DonationFormProps {
   onDonationSubmit: (data: {
@@ -133,7 +133,7 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
           Donation Amount (ETH) *
         </label>
         <div className="relative">
-          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             id="amount"
             type="number"
@@ -275,7 +275,7 @@ export default function DonationForm({ onDonationSubmit }: DonationFormProps) {
           </>
         ) : (
           <>
-            <DollarSign className="w-5 h-5" />
+            <IndianRupee className="w-5 h-5" />
             Make Donation
           </>
         )}

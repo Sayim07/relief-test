@@ -19,7 +19,7 @@ import {
   Wallet,
   FileText,
   AlertCircle,
-  DollarSign,
+  IndianRupee,
   ShoppingCart,
   Users,
   ArrowRightCircle,
@@ -233,7 +233,7 @@ export default function BeneficiaryDashboard() {
         beneficiaryEmail: profile.email || '',
         beneficiaryName: profile.displayName || undefined,
         amount: numericAmount,
-        amountDisplay: `$${numericAmount.toFixed(2)}`,
+        amountDisplay: `₹${numericAmount.toFixed(2)}`,
         currency: selectedFund.currency,
         category,
         purpose: purpose || undefined,
@@ -303,13 +303,13 @@ export default function BeneficiaryDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Funds Received"
-          value={`$${metrics.fundsReceived}`}
-          icon={DollarSign}
+          value={`₹${metrics.fundsReceived}`}
+          icon={IndianRupee}
           subtitle="Total allocated funds"
         />
         <MetricCard
           title="Remaining Allowance"
-          value={`$${metrics.remainingAllowance}`}
+          value={`₹${metrics.remainingAllowance}`}
           icon={Wallet}
           subtitle="Available to allocate"
         />
@@ -509,7 +509,7 @@ export default function BeneficiaryDashboard() {
                   <div className="text-right text-sm">
                     <p className="text-gray-400">Total Assigned</p>
                     <p className="font-semibold text-white">
-                      ${ps.totalAssigned.toFixed(2)}
+                      ₹{ps.totalAssigned.toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -518,13 +518,13 @@ export default function BeneficiaryDashboard() {
                   <div>
                     <p className="text-gray-400">Spent</p>
                     <p className="font-semibold text-green-400">
-                      ${ps.totalSpent.toFixed(2)}
+                      ₹{ps.totalSpent.toFixed(2)}
                     </p>
                   </div>
                   <div>
                     <p className="text-gray-400">Remaining</p>
                     <p className="font-semibold text-orange-400">
-                      ${ps.totalRemaining.toFixed(2)}
+                      ₹{ps.totalRemaining.toFixed(2)}
                     </p>
                   </div>
                   <div>
@@ -559,7 +559,7 @@ export default function BeneficiaryDashboard() {
                         </div>
                         <div className="text-right ml-3">
                           <p className="font-semibold text-white">
-                            ${a.amount.toFixed(2)}
+                            ₹{a.amount.toFixed(2)}
                           </p>
                           <p className="text-gray-400 capitalize">
                             {a.status}

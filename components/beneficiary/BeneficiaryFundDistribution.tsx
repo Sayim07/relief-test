@@ -218,7 +218,7 @@ export const BeneficiaryFundDistribution: React.FC<{ beneficiaryId: string }> = 
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -244,19 +244,19 @@ export const BeneficiaryFundDistribution: React.FC<{ beneficiaryId: string }> = 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm font-medium text-slate-600">Available Funds</div>
             <div className="text-3xl font-bold text-slate-900">
-              ${totalAvailable.toFixed(2)}
+              ₹{totalAvailable.toFixed(2)}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm font-medium text-slate-600">Allocated</div>
             <div className="text-3xl font-bold text-blue-600">
-              ${totalAllocated.toFixed(2)}
+              ₹{totalAllocated.toFixed(2)}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm font-medium text-slate-600">Remaining</div>
             <div className="text-3xl font-bold text-slate-900">
-              ${remainingToAllocate.toFixed(2)}
+              ₹{remainingToAllocate.toFixed(2)}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
@@ -342,7 +342,7 @@ export const BeneficiaryFundDistribution: React.FC<{ beneficiaryId: string }> = 
                             <p className="font-semibold text-slate-900">
                               {allocation.partnerName}
                             </p>
-                            <p className="text-sm text-slate-600">${allocation.amount.toFixed(2)}</p>
+                            <p className="text-sm text-slate-600">₹{allocation.amount.toFixed(2)}</p>
                           </div>
                           <button
                             onClick={() => handleRemoveAllocation(index)}
@@ -359,13 +359,13 @@ export const BeneficiaryFundDistribution: React.FC<{ beneficiaryId: string }> = 
                     <div className="flex justify-between mb-2">
                       <span className="text-slate-600">Total Allocated:</span>
                       <span className="font-bold text-slate-900">
-                        ${totalAllocated.toFixed(2)}
+                        ₹{totalAllocated.toFixed(2)}
                       </span>
                     </div>
                     {remainingToAllocate > 0 && (
                       <div className="flex justify-between text-orange-600">
                         <span>Remaining:</span>
-                        <span className="font-bold">${remainingToAllocate.toFixed(2)}</span>
+                        <span className="font-bold">₹{remainingToAllocate.toFixed(2)}</span>
                       </div>
                     )}
                   </div>

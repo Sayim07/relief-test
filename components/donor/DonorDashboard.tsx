@@ -10,7 +10,7 @@ import DonationForm from './DonationForm';
 import DonationHistory from './DonationHistory';
 import DonationConfirmation from './DonationConfirmation';
 import NetworkSwitch from '@/components/NetworkSwitch';
-import { DollarSign, TrendingUp, FileText, Wallet, Heart, Loader2 } from 'lucide-react';
+import { IndianRupee, TrendingUp, FileText, Wallet, Heart, Loader2 } from 'lucide-react';
 
 export default function DonorDashboard() {
   const { profile } = useAuth();
@@ -76,10 +76,19 @@ export default function DonorDashboard() {
         donorName: profile.displayName,
         amount: parseFloat(data.amount) * 1e18, // Convert to wei (assuming 18 decimals)
         amountDisplay: data.amount,
-        currency: 'USDT',
+        currency: 'INR',
         category: data.category,
         description: data.description,
         status: 'pending',
+        donationType: 'general', // Default to general pool
+        verification: {
+          method: 'auto',
+          status: 'pending',
+          riskScore: 0,
+          transactionVerified: false,
+          donorVerified: false,
+          amountVerified: false,
+        },
         transactionHash: data.transactionHash,
       });
 
@@ -91,7 +100,7 @@ export default function DonorDashboard() {
         payerName: profile.displayName,
         amount: parseFloat(data.amount) * 1e18,
         amountDisplay: data.amount,
-        currency: 'USDT',
+        currency: 'INR',
         category: data.category,
         description: data.description,
         status: 'pending',
@@ -154,12 +163,12 @@ export default function DonorDashboard() {
         <div className="bg-[#0a0a1a] rounded-lg shadow-lg p-6 border border-[#392e4e]">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-blue-600" />
+              <IndianRupee className="w-6 h-6 text-blue-600" />
             </div>
             <TrendingUp className="w-5 h-5 text-green-600" />
           </div>
           <h3 className="text-2xl font-bold text-white mb-1">
-            ${stats.totalDonated.toFixed(2)}
+            ₹{stats.totalDonated.toFixed(2)}
           </h3>
           <p className="text-sm text-gray-600">Total Donated</p>
         </div>

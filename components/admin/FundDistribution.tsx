@@ -7,7 +7,7 @@ import { ReliefFund, BeneficiaryFund } from '@/lib/types/database';
 import { useWallet } from '@/hooks/useWallet';
 import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
 import { UserProfile } from '@/lib/types/user';
-import { DollarSign, Users, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
+import { IndianRupee, Users, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
 
 export default function FundDistribution() {
   const { profile } = useAuth();
@@ -161,7 +161,7 @@ export default function FundDistribution() {
               <option value="">Choose a relief fund...</option>
               {funds.map((fund) => (
                 <option key={fund.id} value={fund.id}>
-                  {fund.name} - ${fund.totalAmountDisplay} (Remaining: ${(parseFloat(fund.remainingAmount.toString()) / 1e18).toFixed(2)})
+                  {fund.name} - ₹{fund.totalAmountDisplay} (Remaining: ₹{(parseFloat(fund.remainingAmount.toString()) / 1e18).toFixed(2)})
                 </option>
               ))}
             </select>
@@ -169,7 +169,7 @@ export default function FundDistribution() {
               <div className="mt-2 p-3 bg-blue-900/20 border border-blue-900/50 rounded-lg">
                 <p className="text-sm text-gray-300">
                   Available: <span className="font-semibold text-blue-400">
-                    ${(parseFloat(selectedFundData.remainingAmount.toString()) / 1e18).toFixed(2)}
+                    ₹{(parseFloat(selectedFundData.remainingAmount.toString()) / 1e18).toFixed(2)}
                   </span>
                 </p>
               </div>
@@ -204,10 +204,10 @@ export default function FundDistribution() {
 
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">
-              Amount (USDT) *
+              Amount (INR) *
             </label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+              <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
               <input
                 type="number"
                 step="0.01"
@@ -220,7 +220,7 @@ export default function FundDistribution() {
             </div>
             {selectedFundData && amount && (
               <p className="mt-1 text-sm text-gray-500">
-                Remaining after distribution: ${(parseFloat(selectedFundData.remainingAmount.toString()) / 1e18 - parseFloat(amount || '0')).toFixed(2)}
+                Remaining after distribution: ₹{(parseFloat(selectedFundData.remainingAmount.toString()) / 1e18 - parseFloat(amount || '0')).toFixed(2)}
               </p>
             )}
           </div>
@@ -262,7 +262,7 @@ export default function FundDistribution() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Amount:</span>
-              <span className="font-semibold text-lg text-blue-400">${amount} USDT</span>
+              <span className="font-semibold text-lg text-blue-400">₹{amount} INR</span>
             </div>
           </div>
         </div>

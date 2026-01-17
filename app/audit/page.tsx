@@ -330,7 +330,7 @@ export default function AuditPage() {
                 <TrendingUp className="w-6 h-6 text-blue-500" />
                 <span className="text-xs font-semibold text-blue-400">TOTAL DONATED</span>
               </div>
-              <div className="text-3xl font-black text-white">${formatAmount(stats.totalDonated)}</div>
+              <div className="text-3xl font-black text-white">₹{formatAmount(stats.totalDonated)}</div>
               <p className="text-sm text-slate-400 mt-2">Verified donations</p>
             </div>
 
@@ -339,7 +339,7 @@ export default function AuditPage() {
                 <Wallet className="w-6 h-6 text-green-500" />
                 <span className="text-xs font-semibold text-green-400">DISTRIBUTED</span>
               </div>
-              <div className="text-3xl font-black text-white">${formatAmount(stats.totalDistributed)}</div>
+              <div className="text-3xl font-black text-white">₹{formatAmount(stats.totalDistributed)}</div>
               <p className="text-sm text-slate-400 mt-2">Relief funds delivered</p>
             </div>
 
@@ -423,7 +423,7 @@ export default function AuditPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="font-semibold text-white">
-                              ${formatAmount(tx.amount)}
+                              ₹{formatAmount(tx.amount)}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">

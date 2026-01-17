@@ -28,7 +28,7 @@ interface DonationFormData {
 export const DonorDonationForm: React.FC<{ userId: string }> = ({ userId }) => {
   const [formData, setFormData] = useState<DonationFormData>({
     amount: 0,
-    currency: 'USD',
+    currency: 'INR',
     description: '',
     category: '',
     donationType: 'general',
@@ -128,12 +128,12 @@ export const DonorDonationForm: React.FC<{ userId: string }> = ({ userId }) => {
     }
 
     if (formData.amount < 10) {
-      setError('Minimum donation amount is $10');
+      setError('Minimum donation amount is ₹750');
       return false;
     }
 
     if (formData.amount > 1000000) {
-      setError('Maximum donation amount is $1,000,000');
+      setError('Maximum donation amount is ₹75,000,000');
       return false;
     }
 
@@ -195,7 +195,7 @@ export const DonorDonationForm: React.FC<{ userId: string }> = ({ userId }) => {
       );
       setFormData({
         amount: 0,
-        currency: 'USD',
+        currency: 'INR',
         description: '',
         category: '',
         donationType: 'general',
@@ -215,7 +215,7 @@ export const DonorDonationForm: React.FC<{ userId: string }> = ({ userId }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -372,14 +372,14 @@ export const DonorDonationForm: React.FC<{ userId: string }> = ({ userId }) => {
                   onChange={handleInputChange}
                   className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="USD">USD</option>
+                  <option value="INR">INR</option>
                   <option value="EUR">EUR</option>
                   <option value="GBP">GBP</option>
                   <option value="ETH">ETH</option>
                   <option value="USDC">USDC</option>
                 </select>
               </div>
-              <p className="text-xs text-slate-600 mt-1">Min: $10 | Max: $1,000,000</p>
+              <p className="text-xs text-slate-600 mt-1">Min: ₹750 | Max: ₹75,000,000</p>
             </div>
 
             {/* Category */}

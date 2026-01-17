@@ -46,7 +46,7 @@ export interface Donation {
   donorName?: string;
   amount: number; // Amount in tokens/wei
   amountDisplay: string; // Human-readable amount
-  currency: string; // e.g., 'USDT', 'USDC'
+  currency: string; // e.g., 'INR', 'USDC'
   category?: string; // Optional category
   description?: string;
   status: DonationStatus;
