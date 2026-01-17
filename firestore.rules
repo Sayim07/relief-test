@@ -38,7 +38,8 @@ service cloud.firestore {
     match /admins/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
-      allow create: if isAdmin();
+      // Allow admin creation if user is already admin, or if this is the first admin (no other admins exist)
+      allow create: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
