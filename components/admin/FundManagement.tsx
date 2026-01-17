@@ -16,6 +16,8 @@ export default function FundManagement() {
     name: '',
     description: '',
     category: '',
+    amount: '', // Add amount field for direct funding
+    fundingType: 'donations' as 'donations' | 'wallet', // Add funding type
   });
 
   useEffect(() => {
@@ -45,8 +47,24 @@ export default function FundManagement() {
     }
 
     try {
-      // Calculate total from verified donations
-      const totalAmount = verifiedDonations.reduce((sum, d) => sum + parseFloat(d.amountDisplay || '0'), 0);
+      let totalAmount = 0;
+
+      if (newFund.fundingType === 'wallet') {
+        // Direct funding from admin wallet
+        if (!newFund.amount || parseFloat(newFund.amount) <= 0) {
+          alert('Please enter a valid amount');
+          return;
+        }
+        totalAmount = parseFloat(newFund.amount);
+      } else {
+        // Calculate total from verified donations (existing logic)
+        totalAmount = verifiedDonations.reduce((sum, d) => sum + parseFloat(d.amountDisplay || '0'), 0);
+        
+        if (totalAmount <= 0) {
+          alert('No verified donations available to create fund');
+          return;
+        }
+      }
 
       await reliefFundService.create({
         name: newFund.name,
@@ -61,9 +79,10 @@ export default function FundManagement() {
         createdBy: profile.uid,
       });
 
-      setNewFund({ name: '', description: '', category: '' });
+      setNewFund({ name: '', description: '', category: '', amount: '', fundingType: 'donations' });
       setShowCreateForm(false);
       await loadData();
+      alert(`Fund created successfully with ₹${totalAmount.toFixed(2)}!`);
     } catch (error) {
       console.error('Error creating fund:', error);
       alert('Failed to create fund');
@@ -178,6 +197,65 @@ export default function FundManagement() {
                 placeholder="e.g., flood, earthquake"
               />
             </div>
+
+            {/* Funding Type Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Funding Source *</label>
+              <div className="space-y-3">
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="radio"
+                    value="donations"
+                    checked={newFund.fundingType === 'donations'}
+                    onChange={(e) => setNewFund({ ...newFund, fundingType: e.target.value as 'donations' | 'wallet' })}
+                    className="form-radio text-blue-600"
+                  />
+                  <div>
+                    <span className="text-white">From Verified Donations</span>
+                    <p className="text-xs text-gray-400">
+                      Use funds from verified donations (Available: ₹{totalVerified.toFixed(2)})
+                    </p>
+                  </div>
+                </label>
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="radio"
+                    value="wallet"
+                    checked={newFund.fundingType === 'wallet'}
+                    onChange={(e) => setNewFund({ ...newFund, fundingType: e.target.value as 'donations' | 'wallet' })}
+                    className="form-radio text-blue-600"
+                  />
+                  <div>
+                    <span className="text-white">Direct Funding (Admin Wallet)</span>
+                    <p className="text-xs text-gray-400">
+                      Create fund with a specific amount for immediate distribution
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Amount field for wallet funding */}
+            {newFund.fundingType === 'wallet' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Amount (INR) *</label>
+                <div className="relative">
+                  <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={newFund.amount}
+                    onChange={(e) => setNewFund({ ...newFund, amount: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2 bg-[#0a0a1a] border border-[#392e4e] rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-yellow-400">
+                  💡 This amount will be immediately available for distribution to beneficiaries
+                </p>
+              </div>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={handleCreateFund}

@@ -2,23 +2,41 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { reliefFundService, beneficiaryFundService, userService } from '@/lib/firebase/services/index';
+import { reliefFundService, beneficiaryFundService, userService, donationService } from '@/lib/firebase/services/index';
 import { ReliefFund, BeneficiaryFund } from '@/lib/types/database';
 import { useWallet } from '@/hooks/useWallet';
 import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
 import { UserProfile } from '@/lib/types/user';
-import { IndianRupee, Users, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
+import { IndianRupee, Users, ArrowRight, Loader2, CheckCircle, Wallet } from 'lucide-react';
 
 export default function FundDistribution() {
   const { profile } = useAuth();
-  const { signer, isConnected } = useWallet();
-  const [funds, setFunds] = useState<ReliefFund[]>([]);
+  const { signer, isConnected, connect } = useWallet();
   const [beneficiaries, setBeneficiaries] = useState<UserProfile[]>([]);
+  const [verifiedDonations, setVerifiedDonations] = useState<any[]>([]);
+  const [totalAvailableFunds, setTotalAvailableFunds] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [selectedFund, setSelectedFund] = useState<string>('');
   const [selectedBeneficiary, setSelectedBeneficiary] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [distributing, setDistributing] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+
+  useEffect(() => {
+    if (profile?.uid) {
+      loadData();
+    }
+  }, [profile]);
+
+  const handleConnectWallet = async () => {
+    setConnecting(true);
+    try {
+      await connect();
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   useEffect(() => {
     if (profile?.uid) {
@@ -29,19 +47,34 @@ export default function FundDistribution() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [fundsData, beneficiariesData] = await Promise.all([
-        reliefFundService.getActive().catch(err => {
-          console.error('Error loading funds:', err);
-          return [];
-        }),
+      console.log('Loading fund distribution data...');
+      
+      const [beneficiariesData, donationsData] = await Promise.all([
         userService.getByRole('beneficiary').catch(err => {
           console.error('Error loading beneficiaries - insufficient permissions:', err);
-          // This is expected if user is not admin
           return [];
         }),
+        // Load verified donations instead of relief funds
+        donationService.getByStatus('verified').catch((err: any) => {
+          console.error('Error loading verified donations:', err);
+          return [];
+        })
       ]);
-      setFunds(fundsData);
+      
+      console.log('Loaded beneficiaries:', beneficiariesData.length);
+      console.log('Loaded verified donations:', donationsData.length);
+      
       setBeneficiaries(beneficiariesData);
+      setVerifiedDonations(donationsData);
+      
+      // Calculate total available funds from verified donations
+      const totalFunds = donationsData.reduce((total: number, donation: any) => {
+        return total + (donation.amount || 0);
+      }, 0);
+      
+      setTotalAvailableFunds(totalFunds);
+      console.log('Total available funds from verified donations:', totalFunds);
+      
     } catch (error) {
       console.error('Error loading distribution data:', error);
     } finally {
@@ -63,16 +96,14 @@ export default function FundDistribution() {
 
     setDistributing(true);
     try {
-      // Use the first available fund if no fund is selected
-      const fund = selectedFund ? funds.find(f => f.id === selectedFund) : funds[0];
-      if (!fund) {
-        throw new Error('No relief fund available');
+      // Check if we have enough verified funds
+      if (amountNum > totalAvailableFunds) {
+        throw new Error(`Insufficient verified funds. Available: ₹${totalAvailableFunds.toFixed(2)}, Requested: ₹${amountNum}`);
       }
 
       const beneficiary = beneficiaries.find(b => b.uid === selectedBeneficiary);
-
-      if (!fund || !beneficiary) {
-        throw new Error('Fund or beneficiary not found');
+      if (!beneficiary) {
+        throw new Error('Beneficiary not found');
       }
 
       if (!beneficiary.walletAddress) {
@@ -81,70 +112,114 @@ export default function FundDistribution() {
 
       const amountWei = BigInt(Math.floor(amountNum * 1e18));
 
+      console.log('Starting fund distribution process...');
+      console.log(`Distributing ${amountNum} INR to ${beneficiary.displayName || beneficiary.email}`);
+
       // 1. On-chain processing if wallet is connected
       let transactionHash: string | undefined;
       if (signer && isConnected) {
-        const contract = getReliefTokenContract(signer);
+        console.log('Processing on-chain transaction...');
+        try {
+          const contract = getReliefTokenContract(signer);
 
-        // Check if whitelisted
-        const isWhitelisted = await reliefTokenFunctions.isBeneficiaryWhitelisted(contract, beneficiary.walletAddress);
+          // Check if whitelisted
+          const isWhitelisted = await reliefTokenFunctions.isBeneficiaryWhitelisted(contract, beneficiary.walletAddress);
 
-        if (!isWhitelisted) {
-          console.log('Whitelisting beneficiary on-chain...');
-          await reliefTokenFunctions.whitelistBeneficiary(
+          if (!isWhitelisted) {
+            console.log('Whitelisting beneficiary on-chain...');
+            await reliefTokenFunctions.whitelistBeneficiary(
+              contract,
+              beneficiary.walletAddress,
+              ['general'], // Default category for direct distributions
+              [amountWei * BigInt(2)] // Give some buffer for limit
+            );
+          }
+
+          console.log('Distributing relief on-chain...');
+          const tx = await reliefTokenFunctions.distributeRelief(
             contract,
             beneficiary.walletAddress,
-            [fund.category || 'general'],
-            [amountWei * BigInt(2)] // Give some buffer for limit
+            amountWei,
+            'general' // Default category
           );
+          transactionHash = tx.hash;
+          console.log('On-chain transaction completed:', transactionHash);
+        } catch (blockchainError: any) {
+          console.error('Blockchain transaction failed:', blockchainError);
+          throw new Error(`Blockchain transaction failed: ${blockchainError.message}`);
         }
-
-        console.log('Distributing relief on-chain...');
-        const tx = await reliefTokenFunctions.distributeRelief(
-          contract,
-          beneficiary.walletAddress,
-          amountWei,
-          fund.category || 'general'
-        );
-        transactionHash = tx.hash;
+      } else {
+        console.log('Wallet not connected - proceeding with database-only operation');
       }
 
+      console.log('Creating beneficiary fund assignment...');
       // 2. Create beneficiary fund assignment in Firestore
-      await beneficiaryFundService.create({
-        beneficiaryId: beneficiary.uid,
-        beneficiaryEmail: beneficiary.email,
-        beneficiaryName: beneficiary.displayName,
-        reliefFundId: fund.id,
-        amount: Number(amountWei),
-        amountDisplay: amount,
-        currency: fund.currency,
-        category: fund.category,
-        status: 'active',
-        assignedBy: profile.uid,
-        assignedAt: new Date(),
-        distributedAmount: 0,
-        remainingAmount: Number(amountWei),
-        transactionHash: transactionHash,
-      });
+      try {
+        await beneficiaryFundService.create({
+          beneficiaryId: beneficiary.uid,
+          beneficiaryEmail: beneficiary.email,
+          beneficiaryName: beneficiary.displayName,
+          reliefFundId: 'verified_donations_pool', // Special ID for direct distributions
+          amount: Number(amountWei),
+          amountDisplay: amount,
+          currency: 'INR',
+          category: 'general',
+          status: 'active',
+          assignedBy: profile.uid,
+          assignedAt: new Date(),
+          distributedAmount: 0,
+          remainingAmount: Number(amountWei),
+          transactionHash: transactionHash,
+        });
+        console.log('Beneficiary fund assignment created successfully');
+      } catch (dbError: any) {
+        console.error('Database operation failed:', dbError);
+        throw new Error(`Database operation failed: ${dbError.message}`);
+      }
 
-      // 3. Update relief fund in Firestore
-      await reliefFundService.updateDistributedAmount(fund.id, Number(amountWei));
+      // 3. Mark some donations as distributed (simple approach: mark oldest verified donations)
+      console.log('Updating donation status...');
+      try {
+        let remainingToDistribute = amountNum;
+        
+        for (const donation of verifiedDonations) {
+          if (remainingToDistribute <= 0) break;
+          
+          const donationAmount = donation.amount || 0;
+          if (donationAmount > 0 && donation.status === 'verified') {
+            // Mark this donation as distributed (or partially distributed)
+            await donationService.update(donation.id, {
+              status: 'distributed',
+              distributedAt: new Date()
+            });
+            remainingToDistribute -= donationAmount;
+          }
+        }
+        
+        console.log('Donation statuses updated successfully');
+      } catch (updateError: any) {
+        console.error('Failed to update donation status:', updateError);
+        // Don't throw error here - the distribution was successful, this is just bookkeeping
+      }
 
       // Reset form
       setSelectedBeneficiary('');
       setAmount('');
 
-      await loadData();
-      alert('Funds distributed successfully both on-chain and in database!');
+      await loadData(); // Reload to get updated verified donations
+      const successMessage = transactionHash 
+        ? `Funds distributed successfully! Transaction Hash: ${transactionHash}` 
+        : 'Funds distributed successfully from verified donations!';
+      alert(successMessage);
     } catch (error: any) {
       console.error('Error distributing funds:', error);
-      alert(`Failed to distribute funds: ${error.message || 'Unknown error'}`);
+      const errorMessage = error.message || 'Unknown error occurred';
+      alert(`Failed to distribute funds: ${errorMessage}`);
     } finally {
       setDistributing(false);
     }
   };
 
-  const selectedFundData = selectedFund ? funds.find(f => f.id === selectedFund) : funds[0];
   const selectedBeneficiaryData = beneficiaries.find(b => b.uid === selectedBeneficiary);
 
   if (loading) {
@@ -191,6 +266,34 @@ export default function FundDistribution() {
     );
   }
 
+  // Check if no verified donations are available
+  if (totalAvailableFunds === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-white">Fund Distribution to Beneficiaries</h2>
+          <div className="text-sm text-gray-400">
+            Distribute relief funds directly to verified beneficiaries
+          </div>
+        </div>
+        <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
+          <div className="text-center py-12">
+            <IndianRupee className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-lg font-medium text-white mb-2">No Verified Donations Available</h3>
+            <p className="text-gray-400 text-sm mb-4">
+              There are no verified donations available for distribution. 
+              Funds become available after donations are verified by admins.
+            </p>
+            <div className="text-sm text-gray-500">
+              <p>Verified Donations: {verifiedDonations.length}</p>
+              <p>Total Available: ₹{totalAvailableFunds.toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -200,21 +303,37 @@ export default function FundDistribution() {
         </div>
       </div>
 
+      {/* Debug info for development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-900/10 border border-yellow-900/30 rounded-lg p-4">
+          <details className="text-xs text-yellow-300">
+            <summary className="cursor-pointer mb-2">🐛 Debug Info (Dev Mode)</summary>
+            <div className="space-y-1">
+              <div>User Role: {profile?.role || 'Not loaded'}</div>
+              <div>User Email: {profile?.email || 'Not loaded'}</div>
+              <div>Verified Donations: {verifiedDonations.length}</div>
+              <div>Total Available Funds: ₹{totalAvailableFunds.toFixed(2)}</div>
+              <div>Available Beneficiaries: {beneficiaries.length}</div>
+              <div>Wallet Connected: {isConnected ? 'Yes' : 'No'}</div>
+            </div>
+          </details>
+        </div>
+      )}
+
       <div className="bg-[#1a1a2e] rounded-lg shadow-lg border border-[#392e4e] p-6">
         <div className="mb-4 p-4 bg-blue-900/10 border border-blue-900/30 rounded-lg">
           <h4 className="text-sm font-medium text-blue-300 mb-2">📋 Distribution Process</h4>
           <p className="text-xs text-gray-300">
             This form allows you to distribute relief funds directly to <strong>beneficiaries only</strong>. 
             Beneficiaries are individuals who have registered for assistance and have been verified by the system.
-            Funds will be transferred directly to their connected wallet addresses.
+            Funds come from <strong>verified donations</strong> and will be transferred directly to their connected wallet addresses.
           </p>
-          {funds.length > 0 && (
-            <div className="mt-3 p-3 bg-green-900/20 border border-green-900/50 rounded">
-              <p className="text-xs text-green-300">
-                <strong>Active Fund:</strong> {funds[0].name} - Available: ₹{(parseFloat(funds[0].remainingAmount.toString()) / 1e18).toFixed(2)}
-              </p>
-            </div>
-          )}
+          <div className="mt-3 p-3 bg-green-900/20 border border-green-900/50 rounded">
+            <p className="text-xs text-green-300">
+              <strong>Available from Verified Donations:</strong> ₹{totalAvailableFunds.toFixed(2)} 
+              <span className="ml-2 text-gray-300">({verifiedDonations.length} donations)</span>
+            </p>
+          </div>
         </div>
         <div className="space-y-4">
           <div>
@@ -260,22 +379,46 @@ export default function FundDistribution() {
                 placeholder="0.00"
               />
             </div>
-            {selectedFundData && amount && (
-              <p className="mt-1 text-sm text-gray-500">
-                Remaining after distribution: ₹{(parseFloat(selectedFundData.remainingAmount.toString()) / 1e18 - parseFloat(amount || '0')).toFixed(2)}
-              </p>
+            {totalAvailableFunds > 0 && amount && (
+              <div className="mt-2 p-3 bg-gray-900/50 border border-gray-600 rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Available from verified donations:</span>
+                  <span className="text-green-400">₹{totalAvailableFunds.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">After distribution:</span>
+                  <span className={`font-medium ${
+                    totalAvailableFunds - parseFloat(amount || '0') >= 0 
+                      ? 'text-blue-400' 
+                      : 'text-red-400'
+                  }`}>
+                    ₹{(totalAvailableFunds - parseFloat(amount || '0')).toFixed(2)}
+                  </span>
+                </div>
+                {totalAvailableFunds < parseFloat(amount || '0') && (
+                  <div className="mt-2 p-2 bg-red-900/20 border border-red-900/50 rounded text-xs text-red-400">
+                    ⚠️ Insufficient verified funds! Reduce the amount or wait for more donations to be verified.
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
           <button
             onClick={handleDistribute}
-            disabled={!selectedBeneficiary || !amount || distributing || funds.length === 0}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={
+              !selectedBeneficiary || 
+              !amount || 
+              distributing || 
+              totalAvailableFunds === 0 ||
+              totalAvailableFunds < parseFloat(amount || '0')
+            }
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {distributing ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Distributing to Beneficiary...
+                {signer && isConnected ? 'Processing on-chain...' : 'Processing...'}
               </>
             ) : (
               <>
@@ -284,26 +427,74 @@ export default function FundDistribution() {
               </>
             )}
           </button>
+
+          {/* Wallet connection status and connect button */}
+          <div className="mt-4 p-3 rounded-lg bg-gray-900/50 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center text-sm">
+                  <Wallet className="w-4 h-4 mr-2" />
+                  <span className="text-gray-400">Wallet Status:</span>
+                  <span className={`ml-2 font-medium ${isConnected ? 'text-green-400' : 'text-yellow-400'}`}>
+                    {isConnected ? '🟢 Connected' : '🟡 Not Connected'}
+                  </span>
+                </div>
+                {isConnected && (
+                  <div className="text-xs text-green-400 mt-1">
+                    ✓ On-chain operations available
+                  </div>
+                )}
+                {!isConnected && (
+                  <div className="text-xs text-yellow-400 mt-1">
+                    ℹ️ Connect wallet for on-chain distribution
+                  </div>
+                )}
+              </div>
+              {!isConnected && (
+                <button
+                  onClick={handleConnectWallet}
+                  disabled={connecting}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {connecting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Wallet className="w-4 h-4" />
+                      Connect Wallet
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Distribution Preview */}
-      {selectedBeneficiary && amount && selectedFundData && (
+      {selectedBeneficiary && amount && totalAvailableFunds > 0 && (
         <div className="bg-blue-900/10 border border-blue-900/30 rounded-lg p-6">
           <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Distribution Preview - Direct to Beneficiary
+            Distribution Preview - From Verified Donations
           </h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-400">From Relief Fund:</span>
-              <span className="font-medium text-white">{selectedFundData?.name}</span>
+              <span className="text-gray-400">From:</span>
+              <span className="font-medium text-white">Verified Donations Pool</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Available Amount:</span>
               <span className="font-medium text-blue-400">
-                ₹{(parseFloat(selectedFundData.remainingAmount.toString()) / 1e18).toFixed(2)}
+                ₹{totalAvailableFunds.toFixed(2)}
               </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Number of Donations:</span>
+              <span className="font-medium text-gray-300">{verifiedDonations.length} donations</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">To Beneficiary:</span>
@@ -320,7 +511,7 @@ export default function FundDistribution() {
             </div>
             <div className="mt-3 p-3 bg-green-900/20 border border-green-900/50 rounded">
               <p className="text-xs text-green-300">
-                💡 This amount will be directly transferred to the beneficiary's wallet for immediate use.
+                💡 This amount will be deducted from verified donations and transferred to the beneficiary's wallet.
               </p>
             </div>
           </div>

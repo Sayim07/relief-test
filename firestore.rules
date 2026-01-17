@@ -34,11 +34,12 @@ service cloud.firestore {
          get(/databases/$(database)/documents/relief_partners/$(request.auth.uid)).data.role == 'relief_partner');
     }
     
-    // Admins collection
+    // Admins collection - Allow first admin creation
     match /admins/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
-      // Allow admin creation if user is already admin, or if this is the first admin (no other admins exist)
+      // Allow admin creation if user is already admin, or if creating own profile when authenticated
+      // This temporarily allows the first admin to be created
       allow create: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
       allow update: if isAdmin();
       allow delete: if isAdmin();

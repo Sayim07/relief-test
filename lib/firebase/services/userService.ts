@@ -8,6 +8,7 @@ import {
   query,
   where,
   Timestamp,
+  limit,
 } from 'firebase/firestore';
 import { db } from '../config';
 import { UserProfile, UserRole } from '@/lib/types/user';
@@ -27,11 +28,44 @@ export const userService = {
   async create(user: Omit<UserProfile, 'createdAt' | 'updatedAt'>): Promise<void> {
     const collectionName = roleToCollection[user.role];
     const docRef = doc(db, collectionName, user.uid);
-    await setDoc(docRef, {
-      ...user,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    });
+    
+    try {
+      await setDoc(docRef, {
+        ...user,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+    } catch (error: any) {
+      // Special handling for admin creation
+      if (user.role === 'admin' && error.code === 'permission-denied') {
+        console.warn('Admin creation permission denied. This is expected for the first admin registration.');
+        console.warn('Please update your Firestore security rules to allow admin creation, or use the Firebase console to create the first admin manually.');
+        
+        throw new Error(
+          'Admin registration is restricted by Firestore security rules. ' +
+          'This is expected security behavior. Please:\n' +
+          '1. Update your Firestore rules to temporarily allow admin creation, or\n' +
+          '2. Create the first admin account manually in the Firebase console'
+        );
+      }
+      
+      console.error('User creation error:', error);
+      throw new Error(error.message || 'Failed to create user profile');
+    }
+  },
+
+  /**
+   * Check if any admins exist
+   */
+  async hasAdmins(): Promise<boolean> {
+    try {
+      const adminsQuery = query(collection(db, 'admins'), limit(1));
+      const snapshot = await getDocs(adminsQuery);
+      return !snapshot.empty;
+    } catch (error) {
+      console.error('Error checking for admins:', error);
+      return true; // Assume admins exist to be safe
+    }
   },
 
   /**
