@@ -126,5 +126,13 @@ service cloud.firestore {
       allow update: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.payerId);
       allow delete: if isAdmin();
     }
+    
+    // Relief Requests
+    match /relief_requests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if true; // Allow anyone to raise a ticket (off-chain)
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }

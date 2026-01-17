@@ -19,9 +19,13 @@ import {
   ShoppingCart,
   Receipt as ReceiptIcon,
   ArrowRight,
+  ClipboardList,
+  LayoutDashboard,
 } from 'lucide-react';
+import ReliefTicketForm from '@/components/relief/ReliefTicketForm';
 import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
 import { parseEther } from 'ethers';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MetricsState {
   assignedFunds: string;
@@ -62,6 +66,7 @@ export default function ReliefPartnerDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'tickets' | 'operations'>('tickets');
 
   useEffect(() => {
     if (isConnected && profile?.uid) {
@@ -248,282 +253,330 @@ export default function ReliefPartnerDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white">Relief Partner Dashboard</h1>
-        <p className="text-gray-400 mt-2">
-          View your assigned funds, submit spending with receipts, and track your history.
-        </p>
-      </div>
-
-      {/* Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          title="Assigned Funds"
-          value={`₹${metrics.assignedFunds}`}
-          icon={IndianRupee}
-          subtitle="Total funds assigned to you"
-        />
-        <MetricCard
-          title="Remaining Funds"
-          value={`₹${metrics.remainingFunds}`}
-          icon={Wallet}
-          subtitle="Available to spend"
-        />
-        <MetricCard
-          title="Total Spent"
-          value={`₹${metrics.totalSpent}`}
-          icon={ShoppingCart}
-          subtitle="Reported spending"
-        />
-        <MetricCard
-          title="Receipts Submitted"
-          value={metrics.totalReceipts}
-          icon={ReceiptIcon}
-          subtitle="Awaiting / completed verification"
-        />
-      </div>
-
-      {/* Assigned Funds List */}
-      <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Assigned Funds</h2>
-        {assignments.length === 0 ? (
-          <p className="text-sm text-gray-400">
-            You don&apos;t have any assigned funds yet.
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-4xl font-black text-white tracking-tight">Partner Console</h1>
+          <p className="text-gray-400 mt-2 font-medium italic">
+            Raise relief tickets or manage your assigned emergency funds.
           </p>
-        ) : (
-          <div className="space-y-3">
-            {assignments.map((a) => (
-              <div
-                key={a.id}
-                className="border border-[#392e4e] rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-[#1a1a2e]"
-              >
-                <div>
-                  <p className="font-semibold text-white">
-                    {a.beneficiaryName || a.beneficiaryEmail || 'Beneficiary'}
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    Assignment: {a.amountDisplay} {a.currency} • Status:{' '}
-                    <span className="capitalize">{a.status}</span>
-                  </p>
-                  {a.purpose && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Purpose: {a.purpose}
-                    </p>
-                  )}
-                  {a.category && (
-                    <p className="text-xs text-gray-500">
-                      Category: {a.category}
-                    </p>
-                  )}
-                </div>
-                <div className="text-sm text-right md:text-left">
-                  <p className="text-gray-400">
-                    Spent:{' '}
-                    <span className="font-semibold text-green-400">
-                      ₹{a.spentAmount.toFixed(2)}
-                    </span>
-                  </p>
-                  <p className="text-gray-400">
-                    Remaining:{' '}
-                    <span className="font-semibold text-orange-400">
-                      ₹{a.remainingAmount.toFixed(2)}
-                    </span>
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Assigned:{' '}
-                    {a.assignedAt
-                      ? new Date(a.assignedAt).toLocaleDateString()
-                      : '—'}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex bg-[#0a0a1a] border border-[#392e4e] p-1.5 rounded-2xl">
+          <button
+            onClick={() => setActiveTab('tickets')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'tickets'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+              : 'text-gray-500 hover:text-gray-300'
+              }`}
+          >
+            <ClipboardList className="w-4 h-4" /> Relief Tickets
+          </button>
+          <button
+            onClick={() => setActiveTab('operations')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'operations'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+              : 'text-gray-500 hover:text-gray-300'
+              }`}
+          >
+            <LayoutDashboard className="w-4 h-4" /> Operations
+          </button>
+        </div>
       </div>
 
-      {/* Spending Submission */}
-      <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">
-          Submit Spending &amp; Create Receipt
-        </h2>
-        {activeAssignments.length === 0 ? (
-          <p className="text-sm text-gray-400">
-            You currently have no active assignments to spend from.
-          </p>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Assignment
-                </label>
-                <select
-                  value={spendingForm.assignmentId}
-                  onChange={(e) =>
-                    setSpendingForm((prev) => ({
-                      ...prev,
-                      assignmentId: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="">Select assignment...</option>
-                  {activeAssignments.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.beneficiaryName || a.beneficiaryEmail || 'Beneficiary'} — Remaining:{' '}
-                      {a.remainingAmount.toFixed(2)} {a.currency}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={spendingForm.amount}
-                  onChange={(e) =>
-                    setSpendingForm((prev) => ({
-                      ...prev,
-                      amount: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
-                  placeholder="Amount spent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Category
-                </label>
-                <select
-                  value={spendingForm.category}
-                  onChange={(e) =>
-                    setSpendingForm((prev) => ({
-                      ...prev,
-                      category: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="">Select category...</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Recipient Address (Wallet)
-                </label>
-                <input
-                  type="text"
-                  value={spendingForm.recipient}
-                  onChange={(e) =>
-                    setSpendingForm((prev) => ({
-                      ...prev,
-                      recipient: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500/50"
-                  placeholder="0x..."
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  value={spendingForm.description}
-                  onChange={(e) =>
-                    setSpendingForm((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
-                  placeholder="What was this used for?"
-                />
-              </div>
+      <AnimatePresence mode="wait">
+        {activeTab === 'tickets' ? (
+          <motion.div
+            key="tickets"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-6"
+          >
+            <div className="bg-[#0a0a1a]/50 backdrop-blur-xl border border-[#392e4e] p-1 rounded-[3rem] overflow-hidden">
+              <ReliefTicketForm embedded={true} />
             </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={handleSubmitSpending}
-                disabled={submitting}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
-              >
-                {submitting ? 'Submitting...' : 'Submit Spending & Create Receipt'}
-              </button>
-            </div>
-            <p className="mt-2 text-xs text-gray-500">
-              A receipt with a QR code will be generated automatically. Admins can later verify
-              this receipt as part of the audit trail.
-            </p>
-          </>
-        )}
-      </div>
-
-      {/* Spending & Receipt History */}
-      <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">
-          Spending &amp; Receipt History
-        </h2>
-        {receipts.length === 0 ? (
-          <p className="text-sm text-gray-400">
-            You haven&apos;t submitted any receipts yet.
-          </p>
+          </motion.div>
         ) : (
-          <div className="space-y-3">
-            {receipts.map((r) => (
-              <div
-                key={r.id}
-                className="border border-[#392e4e] rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-[#1a1a2e]"
-              >
-                <div>
-                  <p className="font-semibold text-white">
-                    {r.amountDisplay} {r.currency}{' '}
-                    <span className="text-xs text-gray-400">
-                      ({r.status.toUpperCase()})
-                    </span>
-                  </p>
-                  {r.description && (
-                    <p className="text-sm text-gray-400 mt-1">{r.description}</p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    Receipt: {r.receiptNumber}
-                  </p>
-                </div>
-                <div className="text-sm text-right md:text-left">
-                  <p className="text-gray-400">
-                    Date:{' '}
-                    {r.createdAt
-                      ? new Date(r.createdAt).toLocaleDateString()
-                      : '—'}
-                  </p>
-                  {r.qrCodeImageUrl && (
-                    <a
-                      href={r.qrCodeImageUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-1"
+          <motion.div
+            key="operations"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-6"
+          >
+            {/* Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <MetricCard
+                title="Assigned Funds"
+                value={`₹${metrics.assignedFunds}`}
+                icon={IndianRupee}
+                subtitle="Total funds assigned to you"
+              />
+              <MetricCard
+                title="Remaining Funds"
+                value={`₹${metrics.remainingFunds}`}
+                icon={Wallet}
+                subtitle="Available to spend"
+              />
+              <MetricCard
+                title="Total Spent"
+                value={`₹${metrics.totalSpent}`}
+                icon={ShoppingCart}
+                subtitle="Reported spending"
+              />
+              <MetricCard
+                title="Receipts Submitted"
+                value={metrics.totalReceipts}
+                icon={ReceiptIcon}
+                subtitle="Awaiting / completed verification"
+              />
+            </div>
+
+            {/* Assigned Funds List */}
+            <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-6">
+              <h2 className="text-lg font-semibold text-white mb-4">Assigned Funds</h2>
+              {assignments.length === 0 ? (
+                <p className="text-sm text-gray-400">
+                  You don&apos;t have any assigned funds yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {assignments.map((a) => (
+                    <div
+                      key={a.id}
+                      className="border border-[#392e4e] rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-[#1a1a2e]"
                     >
-                      <ReceiptIcon className="w-3 h-3" />
-                      View QR Code
-                    </a>
-                  )}
+                      <div>
+                        <p className="font-semibold text-white">
+                          {a.beneficiaryName || a.beneficiaryEmail || 'Beneficiary'}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          Assignment: {a.amountDisplay} {a.currency} • Status:{' '}
+                          <span className="capitalize">{a.status}</span>
+                        </p>
+                        {a.purpose && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Purpose: {a.purpose}
+                          </p>
+                        )}
+                        {a.category && (
+                          <p className="text-xs text-gray-500">
+                            Category: {a.category}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-sm text-right md:text-left">
+                        <p className="text-gray-400">
+                          Spent:{' '}
+                          <span className="font-semibold text-green-400">
+                            ₹{a.spentAmount.toFixed(2)}
+                          </span>
+                        </p>
+                        <p className="text-gray-400">
+                          Remaining:{' '}
+                          <span className="font-semibold text-orange-400">
+                            ₹{a.remainingAmount.toFixed(2)}
+                          </span>
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Assigned:{' '}
+                          {a.assignedAt
+                            ? new Date(a.assignedAt).toLocaleDateString()
+                            : '—'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+
+            {/* Spending Submission */}
+            <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-6">
+              <h2 className="text-lg font-semibold text-white mb-4">
+                Submit Spending &amp; Create Receipt
+              </h2>
+              {activeAssignments.length === 0 ? (
+                <p className="text-sm text-gray-400">
+                  You currently have no active assignments to spend from.
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">
+                        Assignment
+                      </label>
+                      <select
+                        value={spendingForm.assignmentId}
+                        onChange={(e) =>
+                          setSpendingForm((prev) => ({
+                            ...prev,
+                            assignmentId: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
+                      >
+                        <option value="">Select assignment...</option>
+                        {activeAssignments.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.beneficiaryName || a.beneficiaryEmail || 'Beneficiary'} — Remaining:{' '}
+                            {a.remainingAmount.toFixed(2)} {a.currency}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">
+                        Amount
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={spendingForm.amount}
+                        onChange={(e) =>
+                          setSpendingForm((prev) => ({
+                            ...prev,
+                            amount: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
+                        placeholder="Amount spent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={spendingForm.category}
+                        onChange={(e) =>
+                          setSpendingForm((prev) => ({
+                            ...prev,
+                            category: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
+                      >
+                        <option value="">Select category...</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">
+                        Recipient Address (Wallet)
+                      </label>
+                      <input
+                        type="text"
+                        value={spendingForm.recipient}
+                        onChange={(e) =>
+                          setSpendingForm((prev) => ({
+                            ...prev,
+                            recipient: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500/50"
+                        placeholder="0x..."
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-400 mb-1">
+                        Description
+                      </label>
+                      <input
+                        type="text"
+                        value={spendingForm.description}
+                        onChange={(e) =>
+                          setSpendingForm((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 bg-[#1a1a2e] border border-[#392e4e] text-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50"
+                        placeholder="What was this used for?"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      onClick={handleSubmitSpending}
+                      disabled={submitting}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+                    >
+                      {submitting ? 'Submitting...' : 'Submit Spending & Create Receipt'}
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">
+                    A receipt with a QR code will be generated automatically. Admins can later verify
+                    this receipt as part of the audit trail.
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Spending & Receipt History */}
+            <div className="bg-[#0a0a1a] rounded-xl shadow-sm border border-[#392e4e] p-6">
+              <h2 className="text-lg font-semibold text-white mb-4">
+                Spending &amp; Receipt History
+              </h2>
+              {receipts.length === 0 ? (
+                <p className="text-sm text-gray-400">
+                  You haven&apos;t submitted any receipts yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {receipts.map((r) => (
+                    <div
+                      key={r.id}
+                      className="border border-[#392e4e] rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-[#1a1a2e]"
+                    >
+                      <div>
+                        <p className="font-semibold text-white">
+                          {r.amountDisplay} {r.currency}{' '}
+                          <span className="text-xs text-gray-400">
+                            ({r.status.toUpperCase()})
+                          </span>
+                        </p>
+                        {r.description && (
+                          <p className="text-sm text-gray-400 mt-1">{r.description}</p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          Receipt: {r.receiptNumber}
+                        </p>
+                      </div>
+                      <div className="text-sm text-right md:text-left">
+                        <p className="text-gray-400">
+                          Date:{' '}
+                          {r.createdAt
+                            ? new Date(r.createdAt).toLocaleDateString()
+                            : '—'}
+                        </p>
+                        {r.qrCodeImageUrl && (
+                          <a
+                            href={r.qrCodeImageUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-1"
+                          >
+                            <ReceiptIcon className="w-3 h-3" />
+                            View QR Code
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }
