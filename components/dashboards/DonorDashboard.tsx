@@ -130,7 +130,18 @@ export default function DonorDashboard() {
   };
 
   const handleDonateOptionA = async () => {
-    if (!signer || !selectedPartner || !donationAmount) return;
+    if (!signer) {
+      alert('Wallet not connected. Please connect your MetaMask wallet using the top navbar.');
+      return;
+    }
+    if (!selectedPartner) {
+      alert('Please select a verified relief agency first.');
+      return;
+    }
+    if (!donationAmount || parseFloat(donationAmount) <= 0) {
+      alert('Please enter a valid donation amount.');
+      return;
+    }
 
     try {
       setIsProcessing(true);
@@ -153,16 +164,29 @@ export default function DonorDashboard() {
       alert('Direct donation completed successfully!');
       resetFlow();
       await loadDashboardData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Donation A failed:', error);
-      alert('Donation failed. Check MetaMask.');
+      alert(error?.message?.includes('user rejected')
+        ? 'Transaction was cancelled by user.'
+        : 'Donation failed. Please check your MetaMask balance and try again.');
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleDonateOptionB = async () => {
-    if (!signer || !selectedBeneficiary || !donationAmount) return;
+    if (!signer) {
+      alert('Wallet not connected. Please connect your MetaMask wallet.');
+      return;
+    }
+    if (!selectedBeneficiary) {
+      alert('Please select an active beneficiary first.');
+      return;
+    }
+    if (!donationAmount || parseFloat(donationAmount) <= 0) {
+      alert('Please enter a valid transfer amount.');
+      return;
+    }
 
     try {
       setIsProcessing(true);
@@ -185,9 +209,11 @@ export default function DonorDashboard() {
       alert('Mediated donation sent to beneficiary wallet!');
       resetFlow();
       await loadDashboardData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Donation B failed:', error);
-      alert('Donation failed. Check MetaMask.');
+      alert(error?.message?.includes('user rejected')
+        ? 'Transaction was cancelled by user.'
+        : 'Transfer failed. Please check your MetaMask balance and try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -212,9 +238,7 @@ export default function DonorDashboard() {
 
   return (
     <div className="space-y-8 bento-section" ref={gridRef}>
-      <div className="fixed inset-0 pointer-events-none z-100">
-        <GlobalSpotlight gridRef={gridRef} />
-      </div>
+      <GlobalSpotlight gridRef={gridRef} />
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
@@ -402,11 +426,14 @@ export default function DonorDashboard() {
                         <span className="text-[10px] font-mono text-blue-400 font-bold">{selectedPartner?.walletAddress ? `${selectedPartner.walletAddress.slice(0, 8)}...${selectedPartner.walletAddress.slice(-6)}` : 'AWAITING SELECTION'}</span>
                       </div>
                       <button
-                        disabled={!selectedPartner || !donationAmount || isProcessing}
+                        disabled={isProcessing}
                         onClick={handleDonateOptionA}
-                        className="w-full py-5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-2xl font-black shadow-xl shadow-blue-900/40 transition-all active:scale-95"
+                        className={`w-full py-5 text-white rounded-2xl font-black shadow-xl transition-all active:scale-95 ${!selectedPartner || !donationAmount || !signer
+                            ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                            : 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/40'
+                          }`}
                       >
-                        {isProcessing ? 'PROCESSING...' : 'CONFIRM ON METAMASK'}
+                        {isProcessing ? 'PROCESSING...' : !signer ? 'CONNECT WALLET' : 'CONFIRM ON METAMASK'}
                       </button>
                     </div>
                   </div>
@@ -471,11 +498,14 @@ export default function DonorDashboard() {
                         <span className="text-[10px] font-mono text-purple-400 font-bold">{selectedBeneficiary?.walletAddress ? `${selectedBeneficiary.walletAddress.slice(0, 8)}...${selectedBeneficiary.walletAddress.slice(-6)}` : 'AWAITING SELECTION'}</span>
                       </div>
                       <button
-                        disabled={!selectedBeneficiary || !donationAmount || isProcessing}
+                        disabled={isProcessing}
                         onClick={handleDonateOptionB}
-                        className="w-full py-5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-2xl font-black shadow-xl shadow-purple-900/40 transition-all active:scale-95"
+                        className={`w-full py-5 text-white rounded-2xl font-black shadow-xl transition-all active:scale-95 ${!selectedBeneficiary || !donationAmount || !signer
+                            ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                            : 'bg-purple-600 hover:bg-purple-500 shadow-purple-900/40'
+                          }`}
                       >
-                        {isProcessing ? 'AUTHORIZING...' : 'TRANSFER TO BENEFICIARY'}
+                        {isProcessing ? 'AUTHORIZING...' : !signer ? 'CONNECT WALLET' : 'TRANSFER TO BENEFICIARY'}
                       </button>
                     </div>
                   </div>

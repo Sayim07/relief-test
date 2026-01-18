@@ -16,7 +16,10 @@ service cloud.firestore {
     // Admins collection
     match /admins/{adminId} {
       allow read, list: if isAuthenticated();
-      allow write: if false;
+      // Temporarily allow anyone to create an admin profile for the first admin setup
+      // WARNING: Revert this to "if false" or "if isAdmin()" after creating the first admin
+      allow create: if isAuthenticated() && request.auth.uid == adminId;
+      allow update, delete: if isAdmin();
     }
 
     // Donors collection
