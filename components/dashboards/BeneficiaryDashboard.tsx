@@ -4,15 +4,11 @@ import { useEffect, useMemo, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWallet } from '@/hooks/useWallet';
 import {
-  beneficiaryFundService,
   categoryService,
-  reliefPartnerAssignmentService,
   userService,
   transactionService
 } from '@/lib/firebase/services';
 import type {
-  BeneficiaryFund,
-  ReliefPartnerAssignment,
   Transaction
 } from '@/lib/firebase/services';
 import type { UserProfile } from '@/lib/firebase/services';
@@ -49,24 +45,20 @@ export default function BeneficiaryDashboard() {
     totalTransactions: 0,
   });
 
-  const [beneficiaryFunds, setBeneficiaryFunds] = useState<BeneficiaryFund[]>([]);
   const [reliefPartners, setReliefPartners] = useState<UserProfile[]>([]);
   const [filteredPartners, setFilteredPartners] = useState<UserProfile[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const [assignmentForm, setAssignmentForm] = useState({
-    beneficiaryFundId: '',
     reliefPartnerId: '',
     amount: '',
     category: '',
-    purpose: '',
   });
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const selectedFund = beneficiaryFunds.find((bf) => bf.id === assignmentForm.beneficiaryFundId);
   const selectedPartner = reliefPartners.find((p) => p.uid === assignmentForm.reliefPartnerId);
 
   useEffect(() => {
@@ -91,32 +83,32 @@ export default function BeneficiaryDashboard() {
         }
       }
 
-      const [funds, cats, txs, partners] = await Promise.all([
-        beneficiaryFundService.getByBeneficiary(profile.uid).catch(() => []),
+      const [cats, txs, partners] = await Promise.all([
         categoryService.getAll().catch(() => []),
-        transactionService.getAll().catch(() => []),
+        transactionService.getByAddress(address!).catch(() => []),
         userService.getByRole('relief_partner').catch(() => []),
       ]);
 
       // Filter only VERIFIED partners
       const verifiedPartners = partners.filter((p: UserProfile) => p.verified === true);
 
-      const totalReceived = funds.reduce((sum: number, bf: BeneficiaryFund) => sum + (bf.amount || 0), 0);
-      const remaining = funds.reduce((sum: number, bf: BeneficiaryFund) => sum + (bf.remainingAmount || 0), 0);
+      // RECEIVED: Transactions from anyone to this beneficiary (route: mediated)
+      const receivedTxs = txs.filter((t: Transaction) => t.to.toLowerCase() === address?.toLowerCase());
+      const totalReceived = receivedTxs.reduce((sum: number, t: Transaction) => sum + t.amount, 0);
 
-      const userTxs = txs.filter((t: Transaction) => t.from.toLowerCase() === address?.toLowerCase());
+      // SENT: Transactions from this beneficiary to agencies
+      const sentTxs = txs.filter((t: Transaction) => t.from.toLowerCase() === address?.toLowerCase());
 
       setMetrics({
         fundsReceived: totalReceived.toFixed(2),
-        remainingAllowance: remaining.toFixed(2),
-        totalAllocated: funds.reduce((sum: number, bf: BeneficiaryFund) => sum + (bf.distributedAmount || 0), 0),
+        remainingAllowance: balance,
+        totalAllocated: sentTxs.reduce((sum: number, t: Transaction) => sum + t.amount, 0),
         walletBalance: balance,
-        totalTransactions: userTxs.length,
+        totalTransactions: sentTxs.length,
       });
 
-      setBeneficiaryFunds(funds);
       setCategories(cats);
-      setTransactions(userTxs);
+      setTransactions(txs);
       setReliefPartners(verifiedPartners);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -174,11 +166,9 @@ export default function BeneficiaryDashboard() {
       alert('Funds successfully transferred to Relief Partner!');
       loadDashboard();
       setAssignmentForm({
-        beneficiaryFundId: '',
         reliefPartnerId: '',
         amount: '',
         category: '',
-        purpose: '',
       });
     } catch (error) {
       console.error('Mediated transfer failed:', error);

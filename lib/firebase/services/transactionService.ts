@@ -58,5 +58,18 @@ export const transactionService = {
                 createdAt: data.createdAt.toDate()
             } as Transaction;
         });
+    },
+
+    /**
+     * Get transactions by address (from or to)
+     */
+    async getByAddress(address: string): Promise<Transaction[]> {
+        const addr = address.toLowerCase();
+        // Since Firestore doesn't support 'OR' queries easily for multiple fields without complex indexes,
+        // we'll fetch all and filter client-side for now, or just provide a helper for one field.
+        // Actually, let's just get all and filter in the dashboard for now to maintain simplicity.
+        return this.getAll().then(txs =>
+            txs.filter(tx => tx.from.toLowerCase() === addr || tx.to.toLowerCase() === addr)
+        );
     }
 };

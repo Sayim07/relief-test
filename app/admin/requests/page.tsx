@@ -19,7 +19,12 @@ import {
     Zap,
     Key,
     IndianRupee,
-    Wallet
+    Wallet,
+    Camera,
+    Video,
+    FileSearch,
+    Info,
+    CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
@@ -53,6 +58,7 @@ export default function AdminRequestsPage() {
         try {
             setLoading(true);
             const data = await reliefRequestService.getAll();
+            console.log('LOADED REQUESTS:', data); // DEBUG
             setRequests(data);
         } catch (error) {
             console.error('Error loading requests:', error);
@@ -195,6 +201,11 @@ export default function AdminRequestsPage() {
                                                             <Zap className="w-3 h-3" /> On-Chain Ready
                                                         </span>
                                                     )}
+                                                    {(req.evidenceImage || req.evidenceVideo) && (
+                                                        <span className="flex items-center gap-1 text-[9px] font-black bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/20 uppercase tracking-tighter">
+                                                            <Camera className="w-3 h-3" /> Evidence Present
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                     <h3 className="text-3xl font-black group-hover:text-blue-400 transition-colors">
@@ -224,6 +235,34 @@ export default function AdminRequestsPage() {
                                                 <p className="text-sm text-gray-300 leading-relaxed font-medium italic">
                                                     "{req.description || 'No detailed description provided.'}"
                                                 </p>
+
+                                                {/* Media Evidence Section */}
+                                                {(req.evidenceImage || req.evidenceVideo) && (
+                                                    <div className="mt-4 pt-4 border-t border-white/5 flex gap-4">
+                                                        {req.evidenceImage && (
+                                                            <div className="group/media relative w-20 h-20 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-500/20 transition-all overflow-hidden">
+                                                                <Camera className="w-6 h-6 text-blue-500" />
+                                                                <div className="absolute inset-x-0 bottom-0 bg-blue-600 py-0.5 text-[8px] text-center text-white font-black opacity-0 group-hover/media:opacity-100 transition-opacity">IMAGE</div>
+                                                            </div>
+                                                        )}
+                                                        {req.evidenceVideo && (
+                                                            <div className="group/media relative w-20 h-20 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center cursor-pointer hover:bg-purple-500/20 transition-all overflow-hidden">
+                                                                <Video className="w-6 h-6 text-purple-500" />
+                                                                <div className="absolute inset-x-0 bottom-0 bg-purple-600 py-0.5 text-[8px] text-center text-white font-black opacity-0 group-hover/media:opacity-100 transition-opacity">VIDEO</div>
+                                                            </div>
+                                                        )}
+                                                        {req.evidenceMetadata && (
+                                                            <div className="flex-1 bg-white/2 space-y-1 p-2 rounded-xl">
+                                                                <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                                                                    <FileSearch className="w-2 h-2" /> Digital Footprint
+                                                                </p>
+                                                                <p className="text-[10px] text-blue-400 font-bold truncate">📍 {req.evidenceMetadata.exifLocation}</p>
+                                                                <p className="text-[10px] text-gray-400 font-medium italic">Shot on: {req.evidenceMetadata.deviceModel}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
                                                 <div className="absolute top-2 right-4 text-4xl text-blue-500/10 font-black pointer-events-none">
                                                     "
                                                 </div>
@@ -307,6 +346,32 @@ export default function AdminRequestsPage() {
                                         <p className="text-xs text-gray-500 uppercase font-black tracking-widest mt-1">Legitimacy Audit for {verifyingReq.name}</p>
                                     </div>
                                 </div>
+
+                                {/* Phase 10: Metadata Audit Section */}
+                                {verifyingReq.evidenceMetadata && (
+                                    <div className="mb-6 p-4 bg-purple-500/5 border border-purple-500/20 rounded-2xl relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-100 transition-opacity">
+                                            <FileSearch className="w-12 h-12 text-purple-500" />
+                                        </div>
+                                        <h3 className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                                            <ShieldCheck className="w-3 h-3" /> Metadata Integrity Audit
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-y-3">
+                                            <div>
+                                                <p className="text-[9px] font-black text-gray-500 uppercase">Creation Date</p>
+                                                <p className="text-xs text-white font-bold">{format(new Date(verifyingReq.evidenceMetadata.exifDate!), 'PPp')}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black text-gray-500 uppercase">GPS Proximity</p>
+                                                <p className="text-xs text-green-400 font-bold">{verifyingReq.evidenceMetadata.exifLocation}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <p className="text-[9px] font-black text-gray-500 uppercase">Device Signature</p>
+                                                <p className="text-xs text-blue-400 font-bold">{verifyingReq.evidenceMetadata.deviceModel}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {verificationStep === 'otp' ? (
                                     <div className="space-y-6">

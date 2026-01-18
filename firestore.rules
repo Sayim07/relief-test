@@ -1,9 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Check if user is an admin
+    // Check if user is an admin - SAFER EVALUATION
     function isAdmin() {
       return request.auth != null && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
              get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
     }
 
@@ -14,94 +15,72 @@ service cloud.firestore {
 
     // Admins collection
     match /admins/{adminId} {
-      allow read: if isAuthenticated();
-      allow write: if false; // Only manageable via Firebase Console or special scripts
+      allow read, list: if isAuthenticated();
+      allow write: if false;
     }
 
     // Donors collection
     match /donors/{donorId} {
-      allow read: if isAuthenticated();
+      allow read, list: if isAuthenticated();
       allow write: if request.auth != null && request.auth.uid == donorId;
     }
 
     // Beneficiaries collection
     match /beneficiaries/{beneficiaryId} {
-      allow read: if true; // Publicly viewable for transparency
+      allow read, list: if true;
       allow write: if isAdmin() || (request.auth != null && request.auth.uid == beneficiaryId);
     }
 
     // Relief Partners collection
     match /relief_partners/{partnerId} {
-      allow read: if true; // Publicly viewable for transparency
+      allow read, list: if true;
       allow write: if isAdmin() || (request.auth != null && request.auth.uid == partnerId);
     }
 
     // Categories collection
     match /categories/{categoryId} {
-      allow read: if true;
+      allow read, list: if true;
       allow write: if isAdmin();
     }
 
-    // Donations collection (Standard ETH/Token donations)
+    // Donations collection
     match /donations/{donationId} {
-      allow read: if true; // Public audit trail
+      allow read, list: if true;
       allow create: if isAuthenticated();
-      allow update: if false; // Donations are immutable records
-      allow delete: if isAdmin();
-    }
-
-    // Donation Verification Logs
-    match /donation_verifications/{logId} {
-      allow read: if true;
-      allow create: if isAdmin();
-      allow update, delete: if false;
+      allow update, delete: if isAdmin();
     }
 
     // Relief Partner Assignments
     match /relief_partner_assignments/{assignmentId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated();
+      allow read, list: if true;
+      allow create, update: if isAuthenticated();
       allow delete: if isAdmin();
     }
 
     // Relief Funds
     match /relief_funds/{fundId} {
-      allow read: if true;
+      allow read, list: if true;
       allow write: if isAdmin();
     }
 
     // Beneficiary Funds
     match /beneficiary_funds/{fundId} {
-      allow read: if true;
+      allow read, list: if true;
       allow write: if isAuthenticated();
-    }
-
-    // Receipts
-    match /receipts/{receiptId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if false;
-    }
-
-    // User Access (Internal)
-    match /user_access/{userId} {
-      allow read, write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
     }
 
     // Relief Requests collection
     match /relief_requests/{requestId} {
-      allow read: if true;
-      allow create: if true; // Allow anyone to raise a ticket (off-chain)
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read, list: if true;
+      allow create: if true; 
+      allow update, delete: if isAdmin();
     }
 
     // Transactions collection (Ledger)
     match /transactions/{txHash} {
-      allow read: if true; // Public audit trail
-      allow create: if request.auth != null; // Authenticated users can log transactions
-      allow update, delete: if false; // Immutable ledger
+      allow read, list: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
     }
   }
 }

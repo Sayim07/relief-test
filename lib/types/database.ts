@@ -243,6 +243,13 @@ export interface ReliefRequest {
   beneficiaryWallet?: string;
   verifiedAt?: Date;
   verifiedBy?: string; // Admin UID
+  evidenceImage?: string; // URL or Base64 of victim's ID/Impact
+  evidenceVideo?: string; // URL to short verification video
+  evidenceMetadata?: {
+    exifDate?: string;
+    exifLocation?: string;
+    deviceModel?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
   metadata?: {
