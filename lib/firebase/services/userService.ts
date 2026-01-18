@@ -135,22 +135,82 @@ export const userService = {
    * Get verified relief partners by category
    */
   async getVerifiedPartnersByCategory(category: string): Promise<UserProfile[]> {
-    const q = query(
-      collection(db, roleToCollection.relief_partner),
-      where('verified', '==', true),
-      where('reliefCategories', 'array-contains', category)
-    );
-    const querySnapshot = await getDocs(q);
+    if (!category) return [];
 
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        ...data,
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-        verificationTimestamp: data.verificationTimestamp?.toDate(),
-      } as UserProfile;
+    const collectionsToSearch = [roleToCollection.relief_partner, 'users'];
+    const results = new Map<string, UserProfile>();
+
+    const queries: any[] = [];
+
+    collectionsToSearch.forEach(collName => {
+      // 1. New plural field (array-contains)
+      queries.push(query(
+        collection(db, collName),
+        where('verified', '==', true),
+        where('reliefCategories', 'array-contains', category)
+      ));
+
+      // 2. Legacy singular field
+      queries.push(query(
+        collection(db, collName),
+        where('verified', '==', true),
+        where('reliefCategory', '==', category)
+      ));
+
+      // 3. Fallback for string "true" if someone verified manually as string
+      queries.push(query(
+        collection(db, collName),
+        where('verified', '==', 'true'),
+        where('reliefCategories', 'array-contains', category)
+      ));
+
+      queries.push(query(
+        collection(db, collName),
+        where('verified', '==', 'true'),
+        where('reliefCategory', '==', category)
+      ));
     });
+
+    try {
+      console.log(`[UserService] Searching for verified partners in category: ${category}`);
+      const queryResults = await Promise.allSettled(queries.map(q => getDocs(q)));
+
+      queryResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.warn(`[UserService] Query ${index} failed:`, result.reason);
+          return;
+        }
+
+        const snapshot = result.value;
+        if (!snapshot.empty) {
+          console.log(`[UserService] Query ${index} found ${snapshot.size} potential matches`);
+        }
+
+        snapshot.docs.forEach(doc => {
+          const data = doc.data() as any;
+          // Skip if it doesn't have the relief_partner role (important when searching 'users' collection)
+          if (data.role && data.role !== 'relief_partner') {
+            console.log(`[UserService] Skipping user ${doc.id} with role ${data.role}`);
+            return;
+          }
+
+          const profile = {
+            ...data,
+            uid: doc.id,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt ? new Date(data.createdAt) : new Date()),
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : (data.updatedAt ? new Date(data.updatedAt) : new Date()),
+            verificationTimestamp: data.verificationTimestamp?.toDate ? data.verificationTimestamp.toDate() :
+              (data.verificationTimestamp ? new Date(data.verificationTimestamp) : undefined),
+          } as UserProfile;
+          results.set(profile.uid, profile);
+        });
+      });
+      console.log(`[UserService] Total unique verified partners found: ${results.size}`);
+    } catch (error) {
+      console.error('Error in robust partner query:', error);
+    }
+
+    return Array.from(results.values());
   },
 
   /**

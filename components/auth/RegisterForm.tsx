@@ -53,7 +53,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
     try {
       setCategoriesLoading(true);
       const cats = await categoryService.getAll();
-      
+
       // If no categories from Firebase, use default categories
       if (!cats || cats.length === 0) {
         const defaultCategories = [
@@ -118,7 +118,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
       if (formData.location) additionalData.location = formData.location;
       if (formData.walletAddress) additionalData.walletAddress = formData.walletAddress;
       if (role === 'relief_partner' && formData.category) {
-        additionalData.reliefCategory = formData.category;
+        additionalData.reliefCategories = [formData.category];
       }
 
       const { profile } = await register(
@@ -177,7 +177,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
       if (formData.location) additionalData.location = formData.location;
       if (formData.walletAddress) additionalData.walletAddress = formData.walletAddress;
       if (role === 'relief_partner' && formData.category) {
-        additionalData.reliefCategory = formData.category;
+        additionalData.reliefCategories = [formData.category];
       }
 
       const { profile } = await signInWithGoogle(role, additionalData);
@@ -381,9 +381,8 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
               value={formData.walletAddress}
               onChange={(e) => setFormData({ ...formData, walletAddress: e.target.value })}
               readOnly={isConnected}
-              className={`w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm text-white placeholder-gray-500 ${
-                isConnected ? 'cursor-not-allowed opacity-75' : ''
-              }`}
+              className={`w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm text-white placeholder-gray-500 ${isConnected ? 'cursor-not-allowed opacity-75' : ''
+                }`}
               placeholder="0x..."
             />
           </div>
