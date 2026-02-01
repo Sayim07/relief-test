@@ -22,7 +22,9 @@ import {
 } from 'lucide-react';
 import { formatEther } from 'ethers';
 
-type Tab = 'overview' | 'verification' | 'funds' | 'distribution' | 'analytics';
+type Tab = 'overview' | 'verification' | 'partners' | 'funds' | 'distribution' | 'analytics';
+
+import PartnerVerification from '@/components/admin/PartnerVerification';
 
 export default function AdminDashboard() {
   const { profile } = useAuth();
@@ -31,7 +33,7 @@ export default function AdminDashboard() {
   const [metrics, setMetrics] = useState({
     walletBalance: '0.00',
     totalFundsDistributed: '0.00',
-    activeBeneficiaries: 0,
+    activePartners: 0,
     pendingRequests: 0,
     totalTransactions: 0,
     lastActivity: 'Never',
@@ -62,7 +64,6 @@ export default function AdminDashboard() {
         donationService.getAll().catch(() => []),
         reliefFundService.getAll().catch(() => []),
       ]);
-      const tickets = await reliefRequestService.getAll();
       const allUsers = await userService.getAll();
       const verifiedPartners = allUsers.filter(u => u.role === 'relief_partner' && u.verified);
 
@@ -89,7 +90,7 @@ export default function AdminDashboard() {
       setMetrics({
         walletBalance: balance,
         totalFundsDistributed: totalDistributed.toFixed(2),
-        activeBeneficiaries: activePartners, // Reusing field for Partners
+        activePartners: activePartners,
         pendingRequests: pendingDonations,
         totalTransactions: donations.length + funds.length,
         lastActivity: lastActivity
@@ -105,7 +106,8 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: 'overview' as Tab, label: 'Overview', icon: BarChart3 },
-    { id: 'verification' as Tab, label: 'Verification', icon: CheckCircle },
+    { id: 'verification' as Tab, label: 'Donations', icon: CheckCircle },
+    { id: 'partners' as Tab, label: 'Partners', icon: Users },
     { id: 'funds' as Tab, label: 'Funds', icon: IndianRupee },
     { id: 'distribution' as Tab, label: 'Distribution', icon: ArrowRight },
     { id: 'analytics' as Tab, label: 'Analytics', icon: TrendingUp },
@@ -123,8 +125,8 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2">Manage donations, funds, and relief distribution</p>
+        <h1 className="text-3xl font-bold text-white tracking-tight">Admin Dashboard</h1>
+        <p className="text-gray-600 mt-2 font-light">Manage donations, partners, funds, and relief distribution</p>
       </div>
 
       {/* Overview Tab - Metrics Grid */}
@@ -141,16 +143,16 @@ export default function AdminDashboard() {
               title="Funds Distributed"
               value={`$${metrics.totalFundsDistributed}`}
               icon={IndianRupee}
-              subtitle="Total distributed to beneficiaries"
+              subtitle="Total distributed to partners"
             />
             <MetricCard
-              title="Active Beneficiaries"
-              value={metrics.activeBeneficiaries}
+              title="Active Partners"
+              value={metrics.activePartners}
               icon={Users}
-              subtitle="With available funds"
+              subtitle="With active operations"
             />
             <MetricCard
-              title="Pending Requests"
+              title="Pending Donations"
               value={metrics.pendingRequests}
               icon={Clock}
               subtitle="Awaiting verification"
@@ -175,8 +177,8 @@ export default function AdminDashboard() {
       )}
 
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="flex space-x-8">
+      <div className="border-b border-white/10">
+        <nav className="flex space-x-2 sm:space-x-8 overflow-x-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -184,14 +186,14 @@ export default function AdminDashboard() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors
+                  flex items-center gap-2 px-4 py-4 border-b-2 font-bold text-[10px] uppercase tracking-[0.2em] transition-all
                   ${activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                    ? 'border-blue-600 text-blue-500 bg-blue-500/5'
+                    : 'border-transparent text-gray-500 hover:text-white hover:bg-white/5'
                   }
                 `}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3 h-3" />
                 {tab.label}
               </button>
             );
@@ -200,8 +202,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tab Content */}
-      <div className="mt-6">
+      <div className="mt-8">
         {activeTab === 'verification' && <DonationVerification />}
+        {activeTab === 'partners' && <PartnerVerification />}
         {activeTab === 'funds' && <FundManagement />}
         {activeTab === 'distribution' && <FundDistribution />}
         {activeTab === 'analytics' && <AdminAnalytics />}

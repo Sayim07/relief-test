@@ -121,21 +121,9 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
       return;
     }
 
-    // Validate relief partner category
-    if (role === 'relief_partner' && formData.reliefCategories.length === 0) {
-      setLocalError('Please select at least one category for relief operations');
-      return;
-    }
-
     // Validate relief partner wallet
     if (role === 'relief_partner' && !formData.walletAddress) {
       setLocalError('Wallet address is required for relief partners');
-      return;
-    }
-
-    // Validate proof for relief partners
-    if (role === 'relief_partner' && proofImages.length === 0 && proofVideos.length === 0) {
-      setLocalError('Please upload at least one image or video as proof');
       return;
     }
 
@@ -143,17 +131,11 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
       const additionalData: any = {};
 
       if (formData.phoneNumber) additionalData.phoneNumber = formData.phoneNumber;
-      if (formData.organization) additionalData.organization = formData.organization;
-      if (formData.location) additionalData.location = formData.location;
       if (formData.walletAddress) additionalData.walletAddress = formData.walletAddress;
 
       if (role === 'relief_partner') {
-        additionalData.reliefCategories = formData.reliefCategories;
-        additionalData.reliefPartnerKey = generatePartnerKey(formData.reliefCategories);
-
-        // Upload proofs
-        additionalData.proofImages = await uploadFiles(proofImages, `proofs/${formData.email}/images`);
-        additionalData.proofVideos = await uploadFiles(proofVideos, `proofs/${formData.email}/videos`);
+        additionalData.hasActiveTicket = false;
+        additionalData.verified = false;
       }
 
       const { profile } = await register(
@@ -176,7 +158,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
             router.push('/donor');
             break;
           case 'relief_partner':
-            router.push('/relief-partner');
+            router.push('/relief-partner/raise-ticket');
             break;
           default:
             router.push('/');
@@ -191,12 +173,6 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
     try {
       setLocalError(null);
 
-      // Validate relief partner category and wallet
-      if (role === 'relief_partner' && formData.reliefCategories.length === 0) {
-        setLocalError('Please select at least one category for relief operations');
-        return;
-      }
-
       if (role === 'relief_partner' && !formData.walletAddress) {
         setLocalError('Wallet address is required for relief partners');
         return;
@@ -205,11 +181,11 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
       const additionalData: any = {};
 
       if (formData.phoneNumber) additionalData.phoneNumber = formData.phoneNumber;
-      if (formData.organization) additionalData.organization = formData.organization;
-      if (formData.location) additionalData.location = formData.location;
       if (formData.walletAddress) additionalData.walletAddress = formData.walletAddress;
-      if (role === 'relief_partner' && formData.reliefCategories.length > 0) {
-        additionalData.reliefCategories = formData.reliefCategories;
+
+      if (role === 'relief_partner') {
+        additionalData.hasActiveTicket = false;
+        additionalData.verified = false;
       }
 
       const { profile } = await signInWithGoogle(role, additionalData);
@@ -225,7 +201,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
             router.push('/donor');
             break;
           case 'relief_partner':
-            router.push('/relief-partner');
+            router.push('/relief-partner/raise-ticket');
             break;
           default:
             router.push('/');
@@ -327,173 +303,28 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
         </div>
       </div>
 
-      {role === 'relief_partner' && (
+
+
+      {role !== 'relief_partner' && (
         <div>
-          <label htmlFor="organization" className="block text-sm font-medium text-gray-400 mb-1">
-            Organization Name *
+          <label htmlFor="location" className="block text-sm font-medium text-gray-400 mb-1">
+            Location
           </label>
           <div className="relative">
-            <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input
-              id="organization"
+              id="location"
               type="text"
-              required
-              value={formData.organization}
-              onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500"
-              placeholder="Organization name"
+              placeholder="City, Country"
             />
           </div>
         </div>
       )}
 
-      {role === 'relief_partner' && (
-        <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
-            Relief Categories * <span className="text-xs text-gray-500">(Select one or more)</span>
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {categories.map((cat) => (
-              <label
-                key={cat.id}
-                className={`flex items-center gap-2 p-2 border rounded-lg cursor-pointer transition-all ${formData.reliefCategories.includes(cat.id)
-                  ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                  : 'bg-[#1a1a2e] border-[#392e4e] text-gray-500 hover:border-gray-600'
-                  }`}
-              >
-                <input
-                  type="checkbox"
-                  className="hidden"
-                  checked={formData.reliefCategories.includes(cat.id)}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setFormData(prev => ({
-                      ...prev,
-                      reliefCategories: checked
-                        ? [...prev.reliefCategories, cat.id]
-                        : prev.reliefCategories.filter(id => id !== cat.id)
-                    }));
-                  }}
-                />
-                <Tag className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-tighter">{cat.name}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
 
-      <div>
-        <label htmlFor="location" className="block text-sm font-medium text-gray-400 mb-1">
-          Location
-        </label>
-        <div className="relative">
-          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
-          <input
-            id="location"
-            type="text"
-            value={formData.location}
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500"
-            placeholder="City, Country"
-          />
-        </div>
-      </div>
-
-      {role === 'relief_partner' && (
-        <div className="space-y-4">
-          <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
-            <label className="block text-sm font-bold text-blue-400 mb-3 uppercase tracking-widest text-[10px]">
-              Submission Evidence (Images/Videos) *
-            </label>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Image Upload */}
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => document.getElementById('image-upload')?.click()}
-                  className="w-full aspect-square bg-[#1a1a2e] border-2 border-dashed border-[#392e4e] rounded-xl flex flex-col items-center justify-center gap-2 hover:border-blue-500 transition-all group"
-                >
-                  <Camera className="w-8 h-8 text-gray-500 group-hover:text-blue-500" />
-                  <span className="text-[10px] font-black uppercase text-gray-600">Add Image</span>
-                </button>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      setProofImages(prev => [...prev, ...Array.from(e.target.files!)]);
-                    }
-                  }}
-                />
-                <div className="flex flex-wrap gap-2">
-                  {proofImages.map((file, i) => (
-                    <div key={i} className="relative group">
-                      <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center overflow-hidden">
-                        <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setProofImages(prev => prev.filter((_, idx) => idx !== i))}
-                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Video Upload */}
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => document.getElementById('video-upload')?.click()}
-                  className="w-full aspect-square bg-[#1a1a2e] border-2 border-dashed border-[#392e4e] rounded-xl flex flex-col items-center justify-center gap-2 hover:border-blue-500 transition-all group"
-                >
-                  <Video className="w-8 h-8 text-gray-500 group-hover:text-blue-500" />
-                  <span className="text-[10px] font-black uppercase text-gray-600">Add Video</span>
-                </button>
-                <input
-                  id="video-upload"
-                  type="file"
-                  accept="video/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      setProofVideos(prev => [...prev, ...Array.from(e.target.files!)]);
-                    }
-                  }}
-                />
-                <div className="flex flex-wrap gap-2">
-                  {proofVideos.map((file, i) => (
-                    <div key={i} className="relative group">
-                      <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center overflow-hidden">
-                        <Video className="w-4 h-4 text-blue-400" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setProofVideos(prev => prev.filter((_, idx) => idx !== i))}
-                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <p className="text-[9px] text-gray-600 mt-4 leading-relaxed italic">
-              * Upload legal documentation, mission statements, or active relief operation footage to expedite verification.
-            </p>
-          </div>
-        </div>
-      )}
 
       {role === 'relief_partner' && (
         <div>

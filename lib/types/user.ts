@@ -13,6 +13,7 @@ export interface UserProfile {
   reliefCategory?: string; // Legacy singular field for relief partners
   reliefPartnerKey?: string; // Unique key for verified partners
   verified: boolean;
+  hasActiveTicket?: boolean; // New: track if a verification ticket is pending
   verificationTimestamp?: Date; // When the user was verified by an admin
   proofImages?: string[]; // Verification proofs
   proofVideos?: string[]; // Verification proofs

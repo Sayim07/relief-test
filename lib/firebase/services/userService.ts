@@ -29,11 +29,19 @@ export const userService = {
     const docRef = doc(db, collectionName, user.uid);
 
     try {
-      await setDoc(docRef, {
+      const userData: any = {
         ...user,
+        verified: user.role === 'relief_partner' ? false : (user.role === 'admin' ? false : true),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-      });
+      };
+
+      // Only add hasActiveTicket for relief partners to avoid 'undefined' in Firestore
+      if (user.role === 'relief_partner') {
+        userData.hasActiveTicket = false;
+      }
+
+      await setDoc(docRef, userData);
     } catch (error: any) {
       // Special handling for admin creation
       if (user.role === 'admin' && error.code === 'permission-denied') {

@@ -1,0 +1,33 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+       return isAuthenticated() && 
+              firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    // Relief Partner Proofs
+    match /relief_partner_proofs/{wallet}/{allPaths=**} {
+      // Allow upload if authenticated (wallet link is verified in app)
+      // In production, we should ideally check if request.auth.uid matches the owner of the wallet
+      allow read: if isAdmin() || isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Generic access
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

@@ -40,6 +40,47 @@ service cloud.firestore {
       allow write: if isAdmin() || (request.auth != null && request.auth.uid == partnerId);
     }
 
+    // Categories collection
+    match /categories/{categoryId} {
+      allow read, list: if true;
+      allow write: if isAdmin();
+    }
+
+    // Funds collection
+    match /funds/{fundId} {
+      allow read, list: if true;
+      allow write: if isAdmin();
+    }
+
+    // Donations collection
+    match /donations/{donationId} {
+      allow read: if isAdmin() || (request.auth != null && resource.data.donorId == request.auth.uid);
+      allow list: if isAdmin() || (request.auth != null && (request.auth.uid == request.resource.data.donorId || request.auth.uid == resource.data.donorId)); // Simplified for list
+      allow create: if isAuthenticated() && request.resource.data.donorId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Relief Partner Assignments
+    match /assignments/{assignmentId} {
+      allow read, list: if isAdmin() || isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Receipts collection
+    match /receipts/{receiptId} {
+      allow read, list: if true;
+      allow write: if isAdmin() || isAuthenticated();
+    }
+
+    // Verification Tickets collection
+    match /verification_tickets/{ticketId} {
+      allow read: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow list: if isAdmin() || (request.auth != null && (request.auth.uid == resource.data.uid || request.auth.uid == request.resource.data.uid)); // Allow admin or self
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
     // Relief Requests collection
     match /relief_requests/{requestId} {
       allow read, list: if true;

@@ -14,3 +14,4 @@ export { reliefFundService } from './reliefFundService';
 export { categoryService, type CategoryDefinition } from './categoryService';
 export { receiptService } from './receiptService';
 export { transactionService } from './transactionService';
+export { verificationTicketService } from './verificationTicketService';

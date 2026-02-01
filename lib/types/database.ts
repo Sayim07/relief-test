@@ -244,3 +244,25 @@ export interface Transaction {
   status: 'verified';
   createdAt: Date;
 }
+
+/**
+ * Verification Ticket - Relief Partner identity verification requests
+ */
+export interface VerificationTicket {
+  id: string; // Document ID
+  uid: string; // User UID of the Relief Partner
+  walletAddress: string;
+  organizationName: string;
+  categories: string[];
+  location: string;
+  description: string;
+  proofImages: string[];
+  proofVideos: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  rejectionReason?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  metadata?: {
+    [key: string]: any;
+  };
+}
