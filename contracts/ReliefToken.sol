@@ -15,6 +15,11 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
     bytes32 public constant DONOR_ROLE = keccak256("DONOR_ROLE");
     bytes32 public constant BENEFICIARY_ROLE = keccak256("BENEFICIARY_ROLE");
     bytes32 public constant RELIEF_PARTNER_ROLE = keccak256("RELIEF_PARTNER_ROLE");
+
+    // Relief Partner Key Mappings
+    mapping(string => address) public partnerKeyToAddress;
+    mapping(address => string) public addressToPartnerKey;
+    mapping(address => bool) public isVerifiedPartner;
     // Beneficiary information
     struct Beneficiary { 
         bool isWhitelisted;
@@ -29,6 +34,7 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
         address to;
         uint256 amount;
         string category;
+        string partnerKey; // Log partner key for accountability
         uint256 timestamp;
         string description;
     }
@@ -42,8 +48,10 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
         address donor;
         uint256 amount;
         string category;
+        string partnerKey; // Partner Key involved
         uint256 timestamp;
         bool verified;
+        string routeType; // "direct" or "ticket"
         string description;
         string transactionHash; // Link to initial payment TX
     }
@@ -61,10 +69,11 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
     event BeneficiaryRemoved(address indexed beneficiary);
     event ReliefDistributed(address indexed to, uint256 amount, string category);
     event CategorySpent(address indexed beneficiary, string category, uint256 amount);
-    event TransactionRecorded(uint256 indexed txId, address from, address to, uint256 amount, string category);
-    event DonationRecorded(uint256 indexed donationId, address indexed donor, uint256 amount, string category, string transactionHash);
+    event TransactionRecorded(uint256 indexed txId, address from, address to, uint256 amount, string category, string partnerKey);
+    event DonationRecorded(uint256 indexed donationId, address indexed donor, uint256 amount, string category, string partnerKey, string routeType);
     event DonationVerified(uint256 indexed donationId, address indexed verifier);
     event ReliefPartnerAssigned(address indexed beneficiary, address indexed reliefPartner);
+    event PartnerKeyIssued(string partnerKey, address indexed partnerAddress);
 
     constructor(
         string memory name,
@@ -116,17 +125,31 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
     }
 
     /**
-     * @dev Whitelist a relief partner
+     * @dev Whitelist a relief partner with a unique key
      */
-    function whitelistReliefPartner(address reliefPartner) public onlyRole(ADMIN_ROLE) {
+    function whitelistReliefPartner(address reliefPartner, string memory partnerKey) public onlyRole(ADMIN_ROLE) {
         require(reliefPartner != address(0), "Invalid address");
+        require(bytes(partnerKey).length > 0, "Partner key required");
+        require(partnerKeyToAddress[partnerKey] == address(0), "Partner key already exists");
+        
         grantRole(RELIEF_PARTNER_ROLE, reliefPartner);
+        partnerKeyToAddress[partnerKey] = reliefPartner;
+        addressToPartnerKey[reliefPartner] = partnerKey;
+        isVerifiedPartner[reliefPartner] = true;
+
+        emit PartnerKeyIssued(partnerKey, reliefPartner);
     }
 
     /**
      * @dev Remove a relief partner
      */
     function removeReliefPartner(address reliefPartner) public onlyRole(ADMIN_ROLE) {
+        string memory partnerKey = addressToPartnerKey[reliefPartner];
+        if (bytes(partnerKey).length > 0) {
+            delete partnerKeyToAddress[partnerKey];
+            delete addressToPartnerKey[reliefPartner];
+        }
+        isVerifiedPartner[reliefPartner] = false;
         revokeRole(RELIEF_PARTNER_ROLE, reliefPartner);
     }
 
@@ -156,6 +179,8 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
         address donor,
         uint256 amount,
         string memory category,
+        string memory partnerKey,
+        string memory routeType,
         string memory description,
         string memory transactionHash
     ) public onlyRole(ADMIN_ROLE) {
@@ -163,33 +188,37 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
             donor: donor,
             amount: amount,
             category: category,
+            partnerKey: partnerKey,
             timestamp: block.timestamp,
             verified: false,
+            routeType: routeType,
             description: description,
             transactionHash: transactionHash
         });
 
-        emit DonationRecorded(donationCount, donor, amount, category, transactionHash);
+        emit DonationRecorded(donationCount, donor, amount, category, partnerKey, routeType);
         donationCount++;
     }
 
     /**
      * @dev Donate function for the public to contribute directly (simulated for now, as this is an ERC20)
      */
-    function donate(uint256 amount, string memory category, string memory description, string memory transactionHash) public {
+    function donate(uint256 amount, string memory category, string memory partnerKey, string memory routeType, string memory description, string memory transactionHash) public {
         require(amount > 0, "Amount must be greater than 0");
         
         donations[donationCount] = Donation({
             donor: msg.sender,
             amount: amount,
             category: category,
+            partnerKey: partnerKey,
             timestamp: block.timestamp,
             verified: true,
+            routeType: routeType,
             description: description,
             transactionHash: transactionHash
         });
 
-        emit DonationRecorded(donationCount, msg.sender, amount, category, transactionHash);
+        emit DonationRecorded(donationCount, msg.sender, amount, category, partnerKey, routeType);
         donationCount++;
     }
 
@@ -241,14 +270,15 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
         string memory category
     ) public returns (bool) {
         bool isBeneficiary = beneficiaries[msg.sender].isWhitelisted;
-        bool isPartner = hasRole(RELIEF_PARTNER_ROLE, msg.sender);
+        bool isPartner = isVerifiedPartner[msg.sender];
         
         require(isBeneficiary || isPartner, "Not authorized to spend with category");
         
-        // If it's a partner, we check limits against the beneficiary who assigned them if applicable.
-        // For simplicity in this demo, if they have tokens, they can spend within "General" categories 
-        // OR we track the specific limits.
-        
+        string memory partnerKey = "";
+        if (isPartner) {
+            partnerKey = addressToPartnerKey[msg.sender];
+        }
+
         if (isBeneficiary) {
             require(
                 beneficiaries[msg.sender].categorySpent[category] + amount <= 
@@ -258,7 +288,7 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
             beneficiaries[msg.sender].categorySpent[category] += amount;
         }
         
-        _recordTransaction(msg.sender, to, amount, category, "Category-based transfer");
+        _recordTransaction(msg.sender, to, amount, category, partnerKey, "Category-based transfer");
         emit CategorySpent(msg.sender, category, amount);
         
         return transfer(to, amount);
@@ -303,6 +333,7 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
         address to,
         uint256 amount,
         string memory category,
+        string memory partnerKey,
         string memory description
     ) internal {
         transactions[transactionCount] = Transaction({
@@ -310,10 +341,11 @@ contract ReliefToken is ERC20, Ownable, AccessControl {
             to: to,
             amount: amount,
             category: category,
+            partnerKey: partnerKey,
             timestamp: block.timestamp,
             description: description
         });
-        emit TransactionRecorded(transactionCount, from, to, amount, category);
+        emit TransactionRecorded(transactionCount, from, to, amount, category, partnerKey);
         transactionCount++;
     }
 

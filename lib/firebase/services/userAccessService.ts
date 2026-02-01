@@ -6,7 +6,6 @@ import { UserProfile, UserRole } from '@/lib/types/user';
 const roleToCollection: Record<UserRole, string> = {
   admin: 'admins',
   donor: 'donors',
-  beneficiary: 'beneficiaries',
   relief_partner: 'relief_partners',
 };
 
@@ -14,7 +13,6 @@ export const userAccessService = {
   /**
    * Get users visible to the current user based on their role
    * Admin: sees all users
-   * Beneficiary: sees only relief partners
    * Donor: sees no other users
    * Relief Partner: sees no other users
    */
@@ -22,11 +20,11 @@ export const userAccessService = {
     if (currentUserRole === 'admin') {
       // Admin sees all users from all collections
       const allUsers: UserProfile[] = [];
-      
+
       for (const collectionName of Object.values(roleToCollection)) {
         const q = query(collection(db, collectionName));
         const querySnapshot = await getDocs(q);
-        
+
         querySnapshot.docs.forEach((doc) => {
           const data = doc.data();
           allUsers.push({
@@ -36,23 +34,10 @@ export const userAccessService = {
           } as UserProfile);
         });
       }
-      
+
       return allUsers;
-    } else if (currentUserRole === 'beneficiary') {
-      // Beneficiary sees only relief partners
-      const q = query(collection(db, roleToCollection.relief_partner));
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          ...data,
-          createdAt: data.createdAt.toDate(),
-          updatedAt: data.updatedAt.toDate(),
-        } as UserProfile;
-      });
     }
-    
+
     // Donor and Relief Partner see no other users
     return [];
   },
@@ -69,20 +54,7 @@ export const userAccessService = {
       // Admin can see any role
       const q = query(collection(db, roleToCollection[targetRole]));
       const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          ...data,
-          createdAt: data.createdAt.toDate(),
-          updatedAt: data.updatedAt.toDate(),
-        } as UserProfile;
-      });
-    } else if (currentUserRole === 'beneficiary' && targetRole === 'relief_partner') {
-      // Beneficiary can see relief partners
-      const q = query(collection(db, roleToCollection.relief_partner));
-      const querySnapshot = await getDocs(q);
-      
+
       return querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
@@ -92,7 +64,7 @@ export const userAccessService = {
         } as UserProfile;
       });
     }
-    
+
     // No permission to see this role
     return [];
   },
@@ -104,11 +76,8 @@ export const userAccessService = {
     if (currentUserRole === 'admin') {
       // Admin can view any user
       return true;
-    } else if (currentUserRole === 'beneficiary' && targetUserRole === 'relief_partner') {
-      // Beneficiary can view relief partners
-      return true;
     }
-    
+
     // No permission
     return false;
   },
@@ -127,11 +96,11 @@ export const userAccessService = {
    */
   async getAllUsersWithRole(): Promise<Array<UserProfile & { collection: string }>> {
     const allUsers: Array<UserProfile & { collection: string }> = [];
-    
+
     for (const [role, collectionName] of Object.entries(roleToCollection)) {
       const q = query(collection(db, collectionName));
       const querySnapshot = await getDocs(q);
-      
+
       querySnapshot.docs.forEach((doc) => {
         const data = doc.data();
         allUsers.push({
@@ -142,7 +111,7 @@ export const userAccessService = {
         } as UserProfile & { collection: string });
       });
     }
-    
+
     return allUsers;
   },
 };

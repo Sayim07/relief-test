@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Shield, Phone, User, MapPin, Tag, AlertTriangle, Send, CheckCircle2, Camera, Video, FileCheck } from 'lucide-react';
+import { Shield, Phone, User, MapPin, Tag, AlertTriangle, Send, CheckCircle2, Camera, Video, FileCheck, Wallet } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { reliefRequestService } from '@/lib/firebase/services/reliefRequestService';
 import { UrgencyLevel } from '@/lib/types/database';
 
 const categories = ['Food', 'Medical', 'Shelter', 'Education', 'Water', 'Clothing', 'Other'];
 
-export default function ReliefTicketForm({ embedded = false }: { embedded?: boolean }) {
+export default function ReliefTicketForm({ embedded = false, partnerKey }: { embedded?: boolean; partnerKey?: string }) {
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
@@ -16,6 +16,7 @@ export default function ReliefTicketForm({ embedded = false }: { embedded?: bool
         category: 'Food',
         urgency: 'medium' as UrgencyLevel,
         description: '',
+        recipientWallet: '', // Optional wallet for direct on-chain relief
         evidenceImage: '',
         evidenceVideo: '',
         evidenceMetadata: {
@@ -42,10 +43,11 @@ export default function ReliefTicketForm({ embedded = false }: { embedded?: bool
         // Simulate Metadata generation for "Proof of Life"
         const finalData = {
             ...formData,
+            partnerKey: partnerKey || '', // Store the partner key if provided (vouched ticket)
             evidenceMetadata: {
                 exifDate: new Date().toISOString(),
                 exifLocation: formData.location + ' (GPS Verified)',
-                deviceModel: 'Mobile Device (Trust Score: 95%)'
+                deviceModel: partnerKey ? 'Partner Verified Device' : 'Mobile Device (Trust Score: 95%)'
             }
         };
 
@@ -152,6 +154,19 @@ export default function ReliefTicketForm({ embedded = false }: { embedded?: bool
                         onChange={e => setFormData({ ...formData, location: e.target.value })}
                         className="w-full bg-black/50 border border-[#392e4e] rounded-2xl px-5 py-4 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-white placeholder:text-gray-700"
                         placeholder="City, District, or Specific Area"
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-400 flex items-center gap-2 ml-1">
+                        <Wallet className="w-4 h-4 text-blue-500" /> WALLET ADDRESS (OPTIONAL)
+                    </label>
+                    <input
+                        type="text"
+                        value={formData.recipientWallet}
+                        onChange={e => setFormData({ ...formData, recipientWallet: e.target.value })}
+                        className="w-full bg-black/50 border border-[#392e4e] rounded-2xl px-5 py-4 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-white placeholder:text-gray-700 font-mono text-sm"
+                        placeholder="0x..."
                     />
                 </div>
 

@@ -32,14 +32,6 @@ export default function AuthPage() {
       color: '#0a0a1a',
     },
     {
-      value: 'beneficiary',
-      label: 'RECIPIENT',
-      title: 'Beneficiary',
-      description: 'View your balance, spending limits, and make category-based transfers',
-      icon: Users,
-      color: '#0a1a10',
-    },
-    {
       value: 'donor',
       label: 'SUPPORTER',
       title: 'Donor',
@@ -132,7 +124,7 @@ export default function AuthPage() {
               cardClassName="cursor-target"
               enableBentoGrid={false}
               centered={true}
-              gridClassName="max-w-7xl"
+              gridClassName="max-w-6xl mx-auto justify-center place-items-center"
             />
           </div>
 

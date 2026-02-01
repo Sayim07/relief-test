@@ -10,7 +10,7 @@ export { donationVerificationService, type DonationVerificationLog } from './don
 export { reliefPartnerAssignmentService } from './reliefPartnerAssignmentService';
 export * from './reliefRequestService';
 export { reliefFundService } from './reliefFundService';
-export { beneficiaryFundService } from './beneficiaryFundService';
+
 export { categoryService, type CategoryDefinition } from './categoryService';
 export { receiptService } from './receiptService';
 export { transactionService } from './transactionService';

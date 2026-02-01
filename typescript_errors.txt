@@ -1,0 +1,21 @@
+﻿components/admin/AdminAnalytics.tsx(4,46): error TS2305: Module '"@/lib/firebase/services/index"' has no exported member 'beneficiaryFundService'.
+components/admin/AdminAnalytics.tsx(5,32): error TS2305: Module '"@/lib/types/database"' has no exported member 'BeneficiaryFund'.
+components/admin/AdminAnalytics.tsx(42,48): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+components/admin/AdminAnalytics.tsx(42,53): error TS7006: Parameter 'd' implicitly has an 'any' type.
+components/admin/AdminAnalytics.tsx(43,50): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+components/admin/AdminAnalytics.tsx(43,55): error TS7006: Parameter 'f' implicitly has an 'any' type.
+components/admin/AdminAnalytics.tsx(51,38): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+components/admin/AdminAnalytics.tsx(51,43): error TS7006: Parameter 'f' implicitly has an 'any' type.
+components/admin/AdminAnalytics.tsx(63,46): error TS7006: Parameter 'a' implicitly has an 'any' type.
+components/admin/AdminAnalytics.tsx(63,49): error TS7006: Parameter 'b' implicitly has an 'any' type.
+components/auth/LoginForm.tsx(44,16): error TS2678: Type '"beneficiary"' is not comparable to type 'UserRole'.
+components/auth/LoginForm.tsx(79,16): error TS2678: Type '"beneficiary"' is not comparable to type 'UserRole'.
+components/auth/RegisterForm.tsx(12,30): error TS7016: Could not find a declaration file for module 'uuid'. 'C:/Users/sayim/OneDrive/Documents/relief-test/node_modules/uuid/dist/esm-browser/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+components/dashboards/AdminDashboard.tsx(6,46): error TS2305: Module '"@/lib/firebase/services/index"' has no exported member 'beneficiaryFundService'.
+components/dashboards/AdminDashboard.tsx(68,10): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+components/dashboards/AdminDashboard.tsx(68,15): error TS7006: Parameter 'f' implicitly has an 'any' type.
+components/dashboards/AdminDashboard.tsx(72,50): error TS7006: Parameter 'd' implicitly has an 'any' type.
+components/dashboards/AdminDashboard.tsx(74,10): error TS7006: Parameter 'bf' implicitly has an 'any' type.
+components/dashboards/AdminDashboard.tsx(79,27): error TS7006: Parameter 'd' implicitly has an 'any' type.
+components/dashboards/AdminDashboard.tsx(80,23): error TS7006: Parameter 'f' implicitly has an 'any' type.

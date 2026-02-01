@@ -17,7 +17,6 @@ import { UserProfile, UserRole } from '@/lib/types/user';
 const roleToCollection: Record<UserRole, string> = {
   admin: 'admins',
   donor: 'donors',
-  beneficiary: 'beneficiaries',
   relief_partner: 'relief_partners',
 };
 
@@ -129,6 +128,18 @@ export const userService = {
         verificationTimestamp: data.verificationTimestamp?.toDate(),
       } as UserProfile;
     });
+  },
+
+  /**
+   * Get all users across all role collections
+   */
+  async getAll(): Promise<UserProfile[]> {
+    const results: UserProfile[] = [];
+    for (const role of Object.keys(roleToCollection) as UserRole[]) {
+      const users = await this.getByRole(role);
+      results.push(...users);
+    }
+    return results;
   },
 
   /**

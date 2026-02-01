@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWallet } from '@/hooks/useWallet';
-import { donationService, reliefFundService, beneficiaryFundService } from '@/lib/firebase/services/index';
+import { reliefFundService, reliefPartnerAssignmentService, userService, donationService, reliefRequestService } from '@/lib/firebase/services/index';
 import MetricCard from '@/components/ui/MetricCard';
 import DonationVerification from '@/components/admin/DonationVerification';
 import FundManagement from '@/components/admin/FundManagement';
@@ -58,11 +58,13 @@ export default function AdminDashboard() {
       }
 
       // Load donation and fund data
-      const [donations, funds, beneficiaryFunds] = await Promise.all([
+      const [donations, funds] = await Promise.all([
         donationService.getAll().catch(() => []),
         reliefFundService.getAll().catch(() => []),
-        beneficiaryFundService.getAll().catch(() => []),
       ]);
+      const tickets = await reliefRequestService.getAll();
+      const allUsers = await userService.getAll();
+      const verifiedPartners = allUsers.filter(u => u.role === 'relief_partner' && u.verified);
 
       const totalDistributed = funds.reduce(
         (sum, f) => sum + parseFloat(f.distributedAmount.toString()) / 1e18,
@@ -70,9 +72,10 @@ export default function AdminDashboard() {
       );
 
       const pendingDonations = donations.filter((d) => d.status === 'pending').length;
-      const activeBeneficiaries = beneficiaryFunds.filter(
-        (bf) => parseFloat(bf.remainingAmount.toString()) / 1e18 > 0
-      ).length;
+
+      // Calculate active partners (those with assignments)
+      const assignments = await reliefPartnerAssignmentService.getAll().catch(() => []);
+      const activePartners = new Set(assignments.filter(a => a.status === 'active').map(a => a.reliefPartnerId)).size;
 
       // Get last activity
       const allActivities = [
@@ -86,7 +89,7 @@ export default function AdminDashboard() {
       setMetrics({
         walletBalance: balance,
         totalFundsDistributed: totalDistributed.toFixed(2),
-        activeBeneficiaries,
+        activeBeneficiaries: activePartners, // Reusing field for Partners
         pendingRequests: pendingDonations,
         totalTransactions: donations.length + funds.length,
         lastActivity: lastActivity

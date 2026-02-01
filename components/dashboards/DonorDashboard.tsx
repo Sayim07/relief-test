@@ -10,8 +10,8 @@ import {
   reliefRequestService
 } from '@/lib/firebase/services';
 import MetricCard from '@/components/ui/MetricCard';
-import type { ReliefRequest, Transaction } from '@/lib/firebase/services';
-import type { UserProfile } from '@/lib/firebase/services';
+import type { ReliefRequest, Transaction } from '@/lib/types/database';
+import type { UserProfile } from '@/lib/types/user';
 import {
   Heart,
   IndianRupee,
@@ -27,7 +27,8 @@ import {
   Zap,
   Globe,
   HandHeart,
-  ExternalLink
+  ExternalLink,
+  Ticket
 } from 'lucide-react';
 import { formatEther, parseEther } from 'ethers';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,13 +41,13 @@ export default function DonorDashboard() {
   const [metrics, setMetrics] = useState({
     totalDonated: '0.00',
     directDonations: 0,
-    mediatedDonations: 0,
+    ticketDonations: 0,
     walletBalance: '0.00',
     totalTransactions: 0,
   });
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<any[]>([]);
-  const [beneficiaries, setBeneficiaries] = useState<UserProfile[]>([]);
+  const [verifiedTickets, setVerifiedTickets] = useState<ReliefRequest[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   // Funding Flow State
@@ -54,8 +55,9 @@ export default function DonorDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [partners, setPartners] = useState<UserProfile[]>([]);
   const [partnerLoading, setPartnerLoading] = useState(false);
+  const [ticketLoading, setTicketLoading] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState<UserProfile | null>(null);
-  const [selectedBeneficiary, setSelectedBeneficiary] = useState<UserProfile | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<ReliefRequest | null>(null);
   const [donationAmount, setDonationAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -71,6 +73,7 @@ export default function DonorDashboard() {
   useEffect(() => {
     if (selectedCategory) {
       loadPartners(selectedCategory);
+      loadVerifiedTickets(selectedCategory);
     }
   }, [selectedCategory]);
 
@@ -90,9 +93,8 @@ export default function DonorDashboard() {
         }
       }
 
-      const [cats, benes, txs] = await Promise.all([
+      const [cats, txs] = await Promise.all([
         categoryService.getAll(),
-        userService.getByRole('beneficiary'),
         transactionService.getAll()
       ]);
 
@@ -100,13 +102,12 @@ export default function DonorDashboard() {
       const totalDonated = userTxs.reduce((sum: number, t: Transaction) => sum + t.amount, 0);
 
       setCategories(cats);
-      setBeneficiaries(benes);
       setTransactions(userTxs);
 
       setMetrics({
         totalDonated: totalDonated.toFixed(2),
         directDonations: userTxs.filter((t: Transaction) => t.route === 'direct').length,
-        mediatedDonations: userTxs.filter((t: Transaction) => t.route === 'mediated').length,
+        ticketDonations: userTxs.filter((t: Transaction) => t.route === 'ticket').length,
         walletBalance: balance,
         totalTransactions: userTxs.length,
       });
@@ -126,6 +127,19 @@ export default function DonorDashboard() {
       console.error('Error loading partners:', error);
     } finally {
       setPartnerLoading(false);
+    }
+  };
+
+  const loadVerifiedTickets = async (cat: string) => {
+    try {
+      setTicketLoading(true);
+      const allRequests = await reliefRequestService.getAll();
+      const verified = allRequests.filter(req => req.status === 'verified' && req.category === cat);
+      setVerifiedTickets(verified);
+    } catch (error) {
+      console.error('Error loading tickets:', error);
+    } finally {
+      setTicketLoading(false);
     }
   };
 
@@ -179,34 +193,38 @@ export default function DonorDashboard() {
       alert('Wallet not connected. Please connect your MetaMask wallet.');
       return;
     }
-    if (!selectedBeneficiary) {
-      alert('Please select an active beneficiary first.');
+    if (!selectedTicket) {
+      alert('Please select a verified relief ticket first.');
+      return;
+    }
+    if (!selectedTicket.recipientWallet) {
+      alert('This ticket raiser has not linked a wallet address yet.');
       return;
     }
     if (!donationAmount || parseFloat(donationAmount) <= 0) {
-      alert('Please enter a valid transfer amount.');
+      alert('Please enter a valid donation amount.');
       return;
     }
 
     try {
       setIsProcessing(true);
       const tx = await signer.sendTransaction({
-        to: selectedBeneficiary.walletAddress,
+        to: selectedTicket.recipientWallet,
         value: parseEther(donationAmount)
       });
 
       await transactionService.log({
         from: (await signer.getAddress()).toLowerCase(),
-        to: selectedBeneficiary.walletAddress!.toLowerCase(),
+        to: selectedTicket.recipientWallet!.toLowerCase(),
         amount: parseFloat(donationAmount),
-        category: 'mediated_pool',
-        reliefPartnerKey: 'PENDING_BENEFICIARY_CHOICE',
+        category: selectedTicket.category,
+        reliefPartnerKey: selectedTicket.partnerKey || 'DIRECT_TICKET',
         txHash: tx.hash,
-        route: 'mediated',
+        route: 'ticket',
         status: 'verified'
       });
 
-      alert('Mediated donation sent to beneficiary wallet!');
+      alert('Direct donation sent to ticket raiser!');
       resetFlow();
       await loadDashboardData();
     } catch (error: any) {
@@ -223,7 +241,7 @@ export default function DonorDashboard() {
     setFundingPath(null);
     setSelectedCategory('');
     setSelectedPartner(null);
-    setSelectedBeneficiary(null);
+    setSelectedTicket(null);
     setDonationAmount('');
   };
 
@@ -259,8 +277,8 @@ export default function DonorDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard title="Total Philanthropy" value={`₹${metrics.totalDonated}`} icon={HandHeart} subtitle="Accumulated Impact" />
-        <MetricCard title="Direct Paths" value={metrics.directDonations} icon={Zap} subtitle="Direct Agency Support" />
-        <MetricCard title="Mediated Paths" value={metrics.mediatedDonations} icon={Users} subtitle="Beneficiary Empowerment" />
+        <MetricCard title="Direct Agency Support" value={metrics.directDonations} icon={Zap} subtitle="To Certified Partners" />
+        <MetricCard title="Direct Ticket Support" value={metrics.ticketDonations} icon={Ticket} subtitle="To Verified Needers" />
         <MetricCard title="Global Rank" value="#124" icon={Globe} subtitle="Contribution Leaderboard" />
       </div>
 
@@ -306,16 +324,16 @@ export default function DonorDashboard() {
                 className="group relative p-8 bg-purple-600/5 border border-purple-500/20 rounded-[2.5rem] text-left hover:border-purple-500/50 transition-all"
               >
                 <div className="absolute top-0 right-0 p-8">
-                  <Users className="w-12 h-12 text-purple-500/20 group-hover:text-purple-500/40 transition-colors" />
+                  <Ticket className="w-12 h-12 text-purple-500/20 group-hover:text-purple-500/40 transition-colors" />
                 </div>
                 <div className="space-y-6">
                   <div className="w-16 h-16 bg-purple-600 rounded-3xl flex items-center justify-center shadow-[0_0_30_rgba(147,51,234,0.3)]">
                     <HandHeart className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-white mb-2">Option B: Beneficiary Power</h3>
+                    <h3 className="text-2xl font-black text-white mb-2">Option B: Ticket Funding</h3>
                     <p className="text-gray-400 text-sm font-medium leading-relaxed">
-                      Empower verified beneficiaries by sending funds to their wallet. They will select a verified agency for precise aid delivery.
+                      Empower verified ticket raisers by sending funds directly to their wallet. Direct peer-to-peer relief with no intermediaries.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 text-purple-400 font-black text-xs uppercase tracking-widest">
@@ -429,8 +447,8 @@ export default function DonorDashboard() {
                         disabled={isProcessing}
                         onClick={handleDonateOptionA}
                         className={`w-full py-5 text-white rounded-2xl font-black shadow-xl transition-all active:scale-95 ${!selectedPartner || !donationAmount || !signer
-                            ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                            : 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/40'
+                          ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                          : 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/40'
                           }`}
                       >
                         {isProcessing ? 'PROCESSING...' : !signer ? 'CONNECT WALLET' : 'CONFIRM ON METAMASK'}
@@ -442,34 +460,61 @@ export default function DonorDashboard() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 <div className="space-y-6">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Active Beneficiaries</label>
-                    <div className="grid grid-cols-1 gap-3">
-                      {beneficiaries.map(bene => (
-                        <button
-                          key={bene.uid}
-                          onClick={() => setSelectedBeneficiary(bene)}
-                          className={`p-4 rounded-2xl border text-left transition-all flex items-center justify-between group ${selectedBeneficiary?.uid === bene.uid ? 'bg-purple-600 border-purple-500' : 'bg-black/50 border-[#392e4e] hover:border-purple-500/50'}`}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedBeneficiary?.uid === bene.uid ? 'bg-white/20' : 'bg-purple-500/10'}`}>
-                              <Users className={selectedBeneficiary?.uid === bene.uid ? 'text-white' : 'text-purple-500'} />
-                            </div>
-                            <div>
-                              <p className={`font-black text-sm ${selectedBeneficiary?.uid === bene.uid ? 'text-white' : 'text-white/90'}`}>{bene.displayName}</p>
-                              <p className={`text-[10px] font-medium ${selectedBeneficiary?.uid === bene.uid ? 'text-white/70' : 'text-gray-500'}`}>{bene.location || 'Location Unspecified'}</p>
-                            </div>
-                          </div>
-                          {selectedBeneficiary?.uid === bene.uid && <CheckCircle className="w-5 h-5 text-white" />}
-                        </button>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Select Crisis Sector</label>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => {
+                        setSelectedCategory(e.target.value);
+                        setSelectedTicket(null);
+                      }}
+                      className="w-full bg-black/50 border border-[#392e4e] rounded-2xl px-6 py-4 text-white font-bold focus:ring-4 focus:ring-purple-500/10 outline-none transition-all"
+                    >
+                      <option value="">Choose a category...</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
                       ))}
-                      {beneficiaries.length === 0 && (
+                    </select>
+                  </div>
+
+                  {selectedCategory && (
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Verified Relief Tickets</label>
+                      {ticketLoading ? (
+                        <div className="text-center py-8 bg-black/30 rounded-2xl border border-dashed border-[#392e4e]">
+                          <div className="w-6 h-6 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mx-auto" />
+                        </div>
+                      ) : verifiedTickets.length === 0 ? (
                         <div className="p-12 text-center bg-black/30 rounded-2xl border border-dashed border-[#392e4e]">
-                          <p className="text-sm text-gray-600 font-bold uppercase">No Beneficiaries Registered</p>
+                          <p className="text-sm text-gray-600 font-bold uppercase">No Verified Tickets in this Sector</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-3">
+                          {verifiedTickets.map(ticket => (
+                            <button
+                              key={ticket.id}
+                              onClick={() => setSelectedTicket(ticket)}
+                              className={`p-4 rounded-2xl border text-left transition-all flex items-center justify-between group ${selectedTicket?.id === ticket.id ? 'bg-purple-600 border-purple-500' : 'bg-black/50 border-[#392e4e] hover:border-purple-500/50'}`}
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedTicket?.id === ticket.id ? 'bg-white/20' : 'bg-purple-500/10'}`}>
+                                  <Ticket className={selectedTicket?.id === ticket.id ? 'text-white' : 'text-purple-500'} />
+                                </div>
+                                <div>
+                                  <p className={`font-black text-sm ${selectedTicket?.id === ticket.id ? 'text-white' : 'text-white/90'}`}>{ticket.name}</p>
+                                  <p className={`text-[10px] font-medium ${selectedTicket?.id === ticket.id ? 'text-white/70' : 'text-gray-500'}`}>{ticket.location}</p>
+                                  {ticket.partnerKey && (
+                                    <p className={`text-[9px] font-bold mt-1 ${selectedTicket?.id === ticket.id ? 'text-blue-200' : 'text-blue-500/70'}`}>Vouched by: {ticket.partnerKey}</p>
+                                  )}
+                                </div>
+                              </div>
+                              {selectedTicket?.id === ticket.id && <CheckCircle className="w-5 h-5 text-white" />}
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className="bg-black/30 border border-[#392e4e] rounded-[2.5rem] p-8 space-y-8 h-fit">
@@ -477,12 +522,12 @@ export default function DonorDashboard() {
                     <div className="w-20 h-20 bg-purple-600/10 rounded-full flex items-center justify-center mx-auto">
                       <HandHeart className="w-10 h-10 text-purple-500" />
                     </div>
-                    <h3 className="text-2xl font-black text-white">Empower Beneficiary</h3>
+                    <h3 className="text-2xl font-black text-white">Fund Ticket</h3>
                   </div>
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Transfer Amount (ETH)</label>
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Contribution Amount (ETH)</label>
                       <input
                         type="number"
                         value={donationAmount}
@@ -494,18 +539,18 @@ export default function DonorDashboard() {
 
                     <div className="p-6 bg-purple-900/10 border border-purple-500/20 rounded-2xl space-y-4">
                       <div className="flex justify-between items-center bg-black/40 p-3 rounded-xl">
-                        <span className="text-[10px] font-black text-gray-400 uppercase">Target Beneficiary</span>
-                        <span className="text-[10px] font-mono text-purple-400 font-bold">{selectedBeneficiary?.walletAddress ? `${selectedBeneficiary.walletAddress.slice(0, 8)}...${selectedBeneficiary.walletAddress.slice(-6)}` : 'AWAITING SELECTION'}</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase">Target Recipient</span>
+                        <span className="text-[10px] font-mono text-purple-400 font-bold">{selectedTicket?.recipientWallet ? `${selectedTicket.recipientWallet.slice(0, 8)}...${selectedTicket.recipientWallet.slice(-6)}` : 'AWAITING SELECTION'}</span>
                       </div>
                       <button
                         disabled={isProcessing}
                         onClick={handleDonateOptionB}
-                        className={`w-full py-5 text-white rounded-2xl font-black shadow-xl transition-all active:scale-95 ${!selectedBeneficiary || !donationAmount || !signer
-                            ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                            : 'bg-purple-600 hover:bg-purple-500 shadow-purple-900/40'
+                        className={`w-full py-5 text-white rounded-2xl font-black shadow-xl transition-all active:scale-95 ${!selectedTicket || !donationAmount || !signer
+                          ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                          : 'bg-purple-600 hover:bg-purple-500 shadow-purple-900/40'
                           }`}
                       >
-                        {isProcessing ? 'AUTHORIZING...' : !signer ? 'CONNECT WALLET' : 'TRANSFER TO BENEFICIARY'}
+                        {isProcessing ? 'AUTHORIZING...' : !signer ? 'CONNECT WALLET' : 'SEND RELIEF FUNDS'}
                       </button>
                     </div>
                   </div>
@@ -538,7 +583,7 @@ export default function DonorDashboard() {
               <div key={tx.id} className="group bg-black/40 border border-[#392e4e] p-6 rounded-[2rem] hover:border-blue-500/30 transition-all flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex items-center gap-6 flex-1">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${tx.route === 'direct' ? 'bg-blue-600/10 border border-blue-500/20' : 'bg-purple-600/10 border border-purple-500/20'}`}>
-                    {tx.route === 'direct' ? <Zap className="w-6 h-6 text-blue-500" /> : <Users className="w-6 h-6 text-purple-500" />}
+                    {tx.route === 'direct' ? <Zap className="w-6 h-6 text-blue-500" /> : <Ticket className="w-6 h-6 text-purple-500" />}
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -556,7 +601,7 @@ export default function DonorDashboard() {
 
                 <div className="flex items-center gap-6 border-t md:border-t-0 md:border-l border-[#392e4e] pt-6 md:pt-0 md:pl-8">
                   <div className="text-right">
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Partner Key</p>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Partner/Ticket Key</p>
                     <p className="text-sm font-mono text-blue-400 font-bold">{tx.reliefPartnerKey}</p>
                   </div>
                   <a

@@ -3,7 +3,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  setDoc,
   updateDoc,
   query,
   where,
@@ -75,106 +74,9 @@ export const reliefPartnerAssignmentService = {
       });
     } catch (error: any) {
       if (error?.code === 'failed-precondition') {
-        console.warn('Firestore index missing for reliefPartnerAssignments reliefPartnerId + assignedAt, falling back to memory sort');
         const q = query(
           collection(db, 'reliefPartnerAssignments'),
           where('reliefPartnerId', '==', reliefPartnerId)
-        );
-        const querySnapshot = await getDocs(q);
-        const assignments = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            assignedAt: data.assignedAt.toDate(),
-            completedAt: data.completedAt?.toDate(),
-            createdAt: data.createdAt.toDate(),
-            updatedAt: data.updatedAt.toDate(),
-          } as ReliefPartnerAssignment;
-        });
-        return assignments.sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
-      }
-      throw error;
-    }
-  },
-
-  /**
-   * Get assignments by beneficiary ID
-   */
-  async getByBeneficiary(beneficiaryId: string): Promise<ReliefPartnerAssignment[]> {
-    try {
-      const q = query(
-        collection(db, 'reliefPartnerAssignments'),
-        where('beneficiaryId', '==', beneficiaryId),
-        orderBy('assignedAt', 'desc')
-      );
-      const querySnapshot = await getDocs(q);
-
-      return querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          assignedAt: data.assignedAt.toDate(),
-          completedAt: data.completedAt?.toDate(),
-          createdAt: data.createdAt.toDate(),
-          updatedAt: data.updatedAt.toDate(),
-        } as ReliefPartnerAssignment;
-      });
-    } catch (error: any) {
-      if (error?.code === 'failed-precondition') {
-        console.warn('Firestore index missing for reliefPartnerAssignments beneficiaryId + assignedAt, falling back to memory sort');
-        const q = query(
-          collection(db, 'reliefPartnerAssignments'),
-          where('beneficiaryId', '==', beneficiaryId)
-        );
-        const querySnapshot = await getDocs(q);
-        const assignments = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            assignedAt: data.assignedAt.toDate(),
-            completedAt: data.completedAt?.toDate(),
-            createdAt: data.createdAt.toDate(),
-            updatedAt: data.updatedAt.toDate(),
-          } as ReliefPartnerAssignment;
-        });
-        return assignments.sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
-      }
-      throw error;
-    }
-  },
-
-  /**
-   * Get assignments by beneficiary fund ID
-   */
-  async getByBeneficiaryFund(beneficiaryFundId: string): Promise<ReliefPartnerAssignment[]> {
-    try {
-      const q = query(
-        collection(db, 'reliefPartnerAssignments'),
-        where('beneficiaryFundId', '==', beneficiaryFundId),
-        orderBy('assignedAt', 'desc')
-      );
-      const querySnapshot = await getDocs(q);
-
-      return querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          assignedAt: data.assignedAt.toDate(),
-          completedAt: data.completedAt?.toDate(),
-          createdAt: data.createdAt.toDate(),
-          updatedAt: data.updatedAt.toDate(),
-        } as ReliefPartnerAssignment;
-      });
-    } catch (error: any) {
-      if (error?.code === 'failed-precondition') {
-        console.warn('Firestore index missing for reliefPartnerAssignments beneficiaryFundId + assignedAt, falling back to memory sort');
-        const q = query(
-          collection(db, 'reliefPartnerAssignments'),
-          where('beneficiaryFundId', '==', beneficiaryFundId)
         );
         const querySnapshot = await getDocs(q);
         const assignments = querySnapshot.docs.map((doc) => {
@@ -219,7 +121,6 @@ export const reliefPartnerAssignmentService = {
       });
     } catch (error: any) {
       if (error?.code === 'failed-precondition') {
-        console.warn('Firestore index missing for reliefPartnerAssignments status + assignedAt, falling back to memory sort');
         const q = query(
           collection(db, 'reliefPartnerAssignments'),
           where('status', '==', status)
@@ -240,59 +141,6 @@ export const reliefPartnerAssignmentService = {
       }
       throw error;
     }
-  },
-
-  /**
-   * Get active assignments for a relief partner
-   */
-  async getActive(reliefPartnerId?: string): Promise<ReliefPartnerAssignment[]> {
-    if (reliefPartnerId) {
-      try {
-        const q = query(
-          collection(db, 'reliefPartnerAssignments'),
-          where('reliefPartnerId', '==', reliefPartnerId),
-          where('status', '==', 'active'),
-          orderBy('assignedAt', 'desc')
-        );
-        const querySnapshot = await getDocs(q);
-
-        return querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            assignedAt: data.assignedAt.toDate(),
-            completedAt: data.completedAt?.toDate(),
-            createdAt: data.createdAt.toDate(),
-            updatedAt: data.updatedAt.toDate(),
-          } as ReliefPartnerAssignment;
-        });
-      } catch (error: any) {
-        if (error?.code === 'failed-precondition') {
-          console.warn('Firestore index missing for reliefPartnerAssignments active status + reliefPartnerId, falling back to memory sort');
-          const q = query(
-            collection(db, 'reliefPartnerAssignments'),
-            where('reliefPartnerId', '==', reliefPartnerId),
-            where('status', '==', 'active')
-          );
-          const querySnapshot = await getDocs(q);
-          const assignments = querySnapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              ...data,
-              assignedAt: data.assignedAt.toDate(),
-              completedAt: data.completedAt?.toDate(),
-              createdAt: data.createdAt.toDate(),
-              updatedAt: data.updatedAt.toDate(),
-            } as ReliefPartnerAssignment;
-          });
-          return assignments.sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
-        }
-        throw error;
-      }
-    }
-    return this.getByStatus('active');
   },
 
   /**
@@ -361,5 +209,24 @@ export const reliefPartnerAssignmentService = {
    */
   async cancel(id: string): Promise<void> {
     await this.update(id, { status: 'cancelled' });
+  },
+
+  /**
+   * Get all assignments
+   */
+  async getAll(): Promise<ReliefPartnerAssignment[]> {
+    const q = query(collection(db, 'reliefPartnerAssignments'), orderBy('assignedAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        assignedAt: data.assignedAt.toDate(),
+        completedAt: data.completedAt?.toDate(),
+        createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate(),
+      } as ReliefPartnerAssignment;
+    });
   },
 };

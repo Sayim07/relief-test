@@ -20,16 +20,13 @@ export default function LoginPage() {
   const roles: { value: UserRole; label: string; description: string }[] = [
     { value: 'donor', label: 'Donor', description: 'Make donations to support relief efforts' },
     { value: 'admin', label: 'Admin', description: 'Manage funds and verify donations' },
-    { value: 'beneficiary', label: 'Beneficiary', description: 'Receive and manage relief funds' },
-    { value: 'relief_partner', label: 'Relief Partner', description: 'Execute relief operations' },
+    { value: 'relief_partner', label: 'Relief Partner', description: 'NGOs or Agencies on the ground' },
   ];
 
   const getRoleColor = (role: UserRole) => {
     switch (role) {
       case 'admin':
         return 'from-blue-500 to-blue-600';
-      case 'beneficiary':
-        return 'from-green-500 to-green-600';
       case 'donor':
         return 'from-purple-500 to-purple-600';
       case 'relief_partner':

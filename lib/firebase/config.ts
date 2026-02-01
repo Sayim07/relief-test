@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
@@ -15,7 +16,7 @@ const firebaseConfig = {
 if (typeof window !== 'undefined') {
   const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
   const missingFields = requiredFields.filter(field => !firebaseConfig[field as keyof typeof firebaseConfig]);
-  
+
   if (missingFields.length > 0) {
     console.warn('⚠️ Firebase configuration incomplete. Missing:', missingFields.join(', '));
     console.warn('Please check your .env.local file has all Firebase configuration values.');
@@ -25,4 +26,5 @@ if (typeof window !== 'undefined') {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 export default app;

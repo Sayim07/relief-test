@@ -3,7 +3,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  setDoc,
   updateDoc,
   query,
   where,
@@ -54,7 +53,6 @@ export const donationService = {
    */
   async getByDonor(donorId: string): Promise<Donation[]> {
     try {
-      // Try with orderBy first (requires index)
       const q = query(
         collection(db, 'donations'),
         where('donorId', '==', donorId),
@@ -74,9 +72,7 @@ export const donationService = {
         } as Donation;
       });
     } catch (error: any) {
-      // If index error, fallback to query without orderBy
       if (error?.code === 'failed-precondition') {
-        console.warn('Index not found, using fallback query without orderBy');
         const q = query(
           collection(db, 'donations'),
           where('donorId', '==', donorId)
@@ -95,7 +91,6 @@ export const donationService = {
           } as Donation;
         });
 
-        // Sort manually
         return donations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       }
       throw error;
@@ -127,7 +122,6 @@ export const donationService = {
       });
     } catch (error: any) {
       if (error?.code === 'failed-precondition') {
-        console.warn('Firestore index missing for donations status + createdAt, falling back to memory sort');
         const q = query(
           collection(db, 'donations'),
           where('status', '==', status)
@@ -156,7 +150,6 @@ export const donationService = {
    */
   async getPending(limitCount: number = 50): Promise<Donation[]> {
     try {
-      // Try with orderBy first (requires index)
       const q = query(
         collection(db, 'donations'),
         where('status', '==', 'pending'),
@@ -177,9 +170,7 @@ export const donationService = {
         } as Donation;
       });
     } catch (error: any) {
-      // If index error, fallback to query without orderBy
       if (error?.code === 'failed-precondition') {
-        console.warn('Index not found, using fallback query without orderBy');
         const q = query(
           collection(db, 'donations'),
           where('status', '==', 'pending'),
@@ -199,7 +190,6 @@ export const donationService = {
           } as Donation;
         });
 
-        // Sort manually
         return donations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       }
       throw error;
@@ -229,9 +219,7 @@ export const donationService = {
         } as Donation;
       });
     } catch (error: any) {
-      // If index error, fallback to query without orderBy
       if (error?.code === 'failed-precondition') {
-        console.warn('Index not found, using fallback query without orderBy');
         const querySnapshot = await getDocs(collection(db, 'donations'));
 
         const donations = querySnapshot.docs.map((doc) => {
@@ -246,7 +234,6 @@ export const donationService = {
           } as Donation;
         });
 
-        // Sort manually
         return donations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       }
       throw error;
@@ -287,7 +274,7 @@ export const donationService = {
   },
 
   /**
-   * Mark donation as distributed
+   * Mark distributed
    */
   async markDistributed(id: string): Promise<void> {
     await this.update(id, {

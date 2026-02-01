@@ -27,7 +27,7 @@ const sidebarItems: SidebarItem[] = [
   { label: 'My Wallet', href: '/wallet', icon: Wallet },
   { label: 'Transactions', href: '/transactions', icon: Receipt },
   { label: 'Distributions', href: '/admin/distributions', icon: Send, roles: ['admin'] },
-  { label: 'Requests', href: '/beneficiary/requests', icon: FileQuestion, roles: ['beneficiary'] },
+
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -48,7 +48,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
-      return pathname === '/dashboard' || pathname === '/admin' || pathname === '/donor' || pathname === '/beneficiary' || pathname === '/relief-partner';
+      return pathname === '/dashboard' || pathname === '/admin' || pathname === '/donor' || pathname === '/relief-partner';
     }
     return pathname?.startsWith(href);
   };

@@ -15,17 +15,15 @@ import {
   Wallet,
   FileText,
   AlertCircle,
-  IndianRupee,
-  ShoppingCart,
-  Receipt as ReceiptIcon,
-  ArrowRight,
   ClipboardList,
   LayoutDashboard,
   ShieldAlert,
   ShieldCheck,
-  Lock,
   Clock,
-  ArrowUpRight
+  Video,
+  IndianRupee,
+  ShoppingCart,
+  Receipt as ReceiptIcon,
 } from 'lucide-react';
 import ReliefTicketForm from '@/components/relief/ReliefTicketForm';
 import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
@@ -87,8 +85,8 @@ export default function ReliefPartnerDashboard() {
       const [assignments, receipts, categories_data] = await Promise.all([
         reliefPartnerAssignmentService.getByReliefPartner(profile.uid).catch(() => []),
         receiptService.getByPayer(profile.uid).catch(() => []),
-        categoryService.getAll().catch(() => []),
-      ]);
+        categoryService.getAll().catch(() => [],
+        )]);
 
       setCategories(categories_data);
 
@@ -190,9 +188,9 @@ export default function ReliefPartnerDashboard() {
         payerId: profile.uid,
         payerEmail: profile.email || '',
         payerName: profile.displayName || '',
-        recipientId: assignment.beneficiaryId,
-        recipientEmail: assignment.beneficiaryEmail || '',
-        recipientName: assignment.beneficiaryName || '',
+        recipientId: undefined,
+        recipientEmail: undefined,
+        recipientName: assignment.recipientName || '',
         amount: numericAmount,
         amountDisplay: `₹${numericAmount.toFixed(2)}`,
         currency: assignment.currency,
@@ -352,7 +350,7 @@ export default function ReliefPartnerDashboard() {
             className="space-y-6"
           >
             <div className="bg-[#0a0a1a]/50 backdrop-blur-xl border border-[#392e4e] p-1 rounded-[3rem] overflow-hidden">
-              <ReliefTicketForm embedded={true} />
+              <ReliefTicketForm embedded={true} partnerKey={profile.reliefPartnerKey} />
             </div>
           </motion.div>
         ) : (
@@ -407,7 +405,7 @@ export default function ReliefPartnerDashboard() {
                     >
                       <div>
                         <p className="font-semibold text-white">
-                          {a.beneficiaryName || a.beneficiaryEmail || 'Beneficiary'}
+                          {a.recipientName || 'Recipient'}
                         </p>
                         <p className="text-sm text-gray-400">
                           Assignment: {a.amountDisplay} {a.currency} • Status:{' '}
@@ -479,7 +477,7 @@ export default function ReliefPartnerDashboard() {
                         <option value="">Select assignment...</option>
                         {activeAssignments.map((a) => (
                           <option key={a.id} value={a.id}>
-                            {a.beneficiaryName || a.beneficiaryEmail || 'Beneficiary'} — Remaining:{' '}
+                            {a.recipientName || 'Recipient'} — Remaining:{' '}
                             {a.remainingAmount.toFixed(2)} {a.currency}
                           </option>
                         ))}

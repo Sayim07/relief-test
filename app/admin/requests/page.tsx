@@ -89,7 +89,7 @@ export default function AdminRequestsPage() {
             setVerificationStep('otp');
             setOtp('');
             setOtpError(false);
-            setApprovalData({ amount: '5000', wallet: req.beneficiaryWallet || '' });
+            setApprovalData({ amount: '5000', wallet: req.recipientWallet || '' });
         }
     };
 
@@ -100,7 +100,7 @@ export default function AdminRequestsPage() {
             setLoading(true);
             await reliefRequestService.updateStatus(verifyingReq.id, 'verified', profile.uid, {
                 approvedAmount: parseFloat(approvalData.amount),
-                beneficiaryWallet: approvalData.wallet || undefined
+                recipientWallet: approvalData.wallet || undefined
             });
             setVerifyingReq(null);
             await loadRequests();
@@ -290,10 +290,10 @@ export default function AdminRequestsPage() {
                                                 <div className="text-right space-y-3">
                                                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Approved Amount</p>
                                                     <p className="text-4xl font-black text-green-400 drop-shadow-sm">₹{req.approvedAmount?.toLocaleString()}</p>
-                                                    {req.beneficiaryWallet ? (
+                                                    {req.recipientWallet ? (
                                                         <div className="bg-black/50 p-3 rounded-xl border border-[#392e4e] max-w-[180px]">
                                                             <p className="text-[9px] font-mono text-gray-400 break-all leading-relaxed">
-                                                                WALLET: {req.beneficiaryWallet}
+                                                                WALLET: {req.recipientWallet}
                                                             </p>
                                                         </div>
                                                     ) : (
@@ -429,7 +429,7 @@ export default function AdminRequestsPage() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Beneficiary Wallet (Optional)</label>
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Recipient Wallet (Optional)</label>
                                             <div className="relative">
                                                 <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
                                                 <input

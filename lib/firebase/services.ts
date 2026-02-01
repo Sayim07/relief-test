@@ -8,5 +8,5 @@
 export * from './services/index';
 
 // Re-export common types
-export type { Transaction, ReliefRequest, BeneficiaryFund, ReliefPartnerAssignment } from '../types/database';
+export type { Transaction, ReliefRequest, ReliefPartnerAssignment } from '../types/database';
 export type { UserProfile, UserRole } from '../types/user';

@@ -1,4 +1,4 @@
-export type UserRole = 'donor' | 'admin' | 'beneficiary' | 'relief_partner';
+export type UserRole = 'donor' | 'admin' | 'relief_partner';
 
 export interface UserProfile {
   uid: string;
@@ -14,6 +14,8 @@ export interface UserProfile {
   reliefPartnerKey?: string; // Unique key for verified partners
   verified: boolean;
   verificationTimestamp?: Date; // When the user was verified by an admin
+  proofImages?: string[]; // Verification proofs
+  proofVideos?: string[]; // Verification proofs
   createdAt: Date;
   updatedAt: Date;
   metadata?: {

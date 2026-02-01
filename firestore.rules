@@ -34,48 +34,10 @@ service cloud.firestore {
       allow write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
     }
 
-    // Beneficiaries collection
-    match /beneficiaries/{beneficiaryId} {
-      allow read, list: if true;
-      allow write: if isAdmin() || (request.auth != null && request.auth.uid == beneficiaryId);
-    }
-
     // Relief Partners collection
     match /relief_partners/{partnerId} {
       allow read, list: if true;
       allow write: if isAdmin() || (request.auth != null && request.auth.uid == partnerId);
-    }
-
-    // Categories collection
-    match /categories/{categoryId} {
-      allow read, list: if true;
-      allow write: if isAdmin();
-    }
-
-    // Donations collection
-    match /donations/{donationId} {
-      allow read, list: if true;
-      allow create: if isAuthenticated();
-      allow update, delete: if isAdmin();
-    }
-
-    // Relief Partner Assignments
-    match /relief_partner_assignments/{assignmentId} {
-      allow read, list: if true;
-      allow create, update: if isAuthenticated();
-      allow delete: if isAdmin();
-    }
-
-    // Relief Funds
-    match /relief_funds/{fundId} {
-      allow read, list: if true;
-      allow write: if isAdmin();
-    }
-
-    // Beneficiary Funds
-    match /beneficiary_funds/{fundId} {
-      allow read, list: if true;
-      allow write: if isAuthenticated();
     }
 
     // Relief Requests collection

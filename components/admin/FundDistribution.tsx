@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { reliefFundService, beneficiaryFundService, userService, donationService } from '@/lib/firebase/services/index';
-import { ReliefFund, BeneficiaryFund } from '@/lib/types/database';
+import { reliefFundService, reliefPartnerAssignmentService, userService, donationService } from '@/lib/firebase/services/index';
+import { ReliefFund, ReliefPartnerAssignment } from '@/lib/types/database';
 import { useWallet } from '@/hooks/useWallet';
 import { getReliefTokenContract, reliefTokenFunctions } from '@/lib/contracts/reliefToken';
 import { UserProfile } from '@/lib/types/user';
@@ -62,10 +62,10 @@ export default function FundDistribution() {
     try {
       setLoading(true);
       console.log('Loading fund distribution data...');
-      
+
       const [beneficiariesData, donationsData] = await Promise.all([
-        userService.getByRole('beneficiary').catch(err => {
-          console.error('Error loading beneficiaries - insufficient permissions:', err);
+        userService.getByRole('relief_partner').catch(err => {
+          console.error('Error loading relief partners - insufficient permissions:', err);
           return [];
         }),
         // Load verified donations instead of relief funds
@@ -74,18 +74,18 @@ export default function FundDistribution() {
           return [];
         })
       ]);
-      
+
       console.log('Loaded beneficiaries:', beneficiariesData.length);
       console.log('Loaded verified donations:', donationsData.length);
-      
+
       setBeneficiaries(beneficiariesData);
       setVerifiedDonations(donationsData);
-      
+
       // Calculate total available funds from verified donations
       const totalFunds = donationsData.reduce((total: number, donation: any) => {
         // Convert from Wei to ETH if the amount is in Wei, then convert to INR
         let donationAmount = donation.amount || 0;
-        
+
         // If amount is very large (likely in Wei), convert to ETH first
         if (donationAmount > 1000000) {
           // Convert Wei to ETH (divide by 1e18), then use amountDisplay if available
@@ -95,13 +95,13 @@ export default function FundDistribution() {
             donationAmount = donationAmount / 1e18;
           }
         }
-        
+
         return total + donationAmount;
       }, 0);
-      
+
       setTotalAvailableFunds(totalFunds);
       console.log('Total available funds from verified donations (in display units):', totalFunds);
-      
+
     } catch (error) {
       console.error('Error loading distribution data:', error);
     } finally {
@@ -130,7 +130,7 @@ export default function FundDistribution() {
 
       const beneficiary = beneficiaries.find(b => b.uid === selectedBeneficiary);
       if (!beneficiary) {
-        throw new Error('Beneficiary not found');
+        throw new Error('Relief Partner not found');
       }
 
       if (!beneficiary.walletAddress) {
@@ -140,7 +140,7 @@ export default function FundDistribution() {
       const amountWei = BigInt(Math.floor(amountNum * 1e18));
 
       console.log('Starting fund distribution process...');
-      console.log(`Distributing ${amountNum} INR to ${beneficiary.displayName || beneficiary.email}`);
+      console.log(`Distributing ${amountNum} INR to ${beneficiary.displayName || beneficiary.email} (RP: ${beneficiary.reliefPartnerKey})`);
 
       // 1. On-chain processing if wallet is connected
       let transactionHash: string | undefined;
@@ -179,14 +179,14 @@ export default function FundDistribution() {
         console.log('Wallet not connected - proceeding with database-only operation');
       }
 
-      console.log('Creating beneficiary fund assignment...');
-      // 2. Create beneficiary fund assignment in Firestore
+      console.log('Creating relief partner assignment...');
+      // 2. Create relief partner assignment in Firestore
       try {
-        await beneficiaryFundService.create({
-          beneficiaryId: beneficiary.uid,
-          beneficiaryEmail: beneficiary.email,
-          beneficiaryName: beneficiary.displayName,
-          reliefFundId: 'verified_donations_pool', // Special ID for direct distributions
+        await reliefPartnerAssignmentService.create({
+          reliefPartnerId: beneficiary.uid,
+          reliefPartnerEmail: beneficiary.email,
+          reliefPartnerName: beneficiary.displayName,
+          sourceTicketId: 'verified_donations_pool', // Special ID for direct distributions
           amount: Number(amountWei),
           amountDisplay: amount,
           currency: 'ETH',
@@ -194,11 +194,13 @@ export default function FundDistribution() {
           status: 'active',
           assignedBy: profile.uid,
           assignedAt: new Date(),
-          distributedAmount: 0,
+          spentAmount: 0,
           remainingAmount: Number(amountWei),
           transactionHash: transactionHash,
+          recipientName: 'General Relief Pool',
+          recipientPhone: 'SYSTEM',
         });
-        console.log('Beneficiary fund assignment created successfully');
+        console.log('Relief partner assignment created successfully');
       } catch (dbError: any) {
         console.error('Database operation failed:', dbError);
         throw new Error(`Database operation failed: ${dbError.message}`);
@@ -208,10 +210,10 @@ export default function FundDistribution() {
       console.log('Updating donation status...');
       try {
         let remainingToDistribute = amountNum;
-        
+
         for (const donation of verifiedDonations) {
           if (remainingToDistribute <= 0) break;
-          
+
           // Get the display amount (what user sees) vs stored amount (Wei)
           let donationDisplayAmount = donation.amount || 0;
           if (donation.amountDisplay) {
@@ -220,7 +222,7 @@ export default function FundDistribution() {
             // Convert Wei to display amount
             donationDisplayAmount = donationDisplayAmount / 1e18;
           }
-          
+
           if (donationDisplayAmount > 0 && donation.status === 'verified') {
             // Mark this donation as distributed
             await donationService.update(donation.id, {
@@ -231,7 +233,7 @@ export default function FundDistribution() {
             console.log(`Marked donation ${donation.id} as distributed (${donationDisplayAmount} units)`);
           }
         }
-        
+
         console.log('Donation statuses updated successfully');
       } catch (updateError: any) {
         console.error('Failed to update donation status:', updateError);
@@ -243,8 +245,8 @@ export default function FundDistribution() {
       setAmount('');
 
       await loadData(); // Reload to get updated verified donations
-      const successMessage = transactionHash 
-        ? `Funds distributed successfully! Transaction Hash: ${transactionHash}` 
+      const successMessage = transactionHash
+        ? `Funds distributed successfully! Transaction Hash: ${transactionHash}`
         : 'Funds distributed successfully from verified donations!';
       alert(successMessage);
     } catch (error: any) {
@@ -317,7 +319,7 @@ export default function FundDistribution() {
             <IndianRupee className="w-16 h-16 mx-auto mb-4 text-gray-400" />
             <h3 className="text-lg font-medium text-white mb-2">No Verified Donations Available</h3>
             <p className="text-gray-400 text-sm mb-4">
-              There are no verified donations available for distribution. 
+              There are no verified donations available for distribution.
               Funds become available after donations are verified by admins.
             </p>
             <div className="text-sm text-gray-500">
@@ -360,13 +362,13 @@ export default function FundDistribution() {
         <div className="mb-4 p-4 bg-blue-900/10 border border-blue-900/30 rounded-lg">
           <h4 className="text-sm font-medium text-blue-300 mb-2">📋 Distribution Process</h4>
           <p className="text-xs text-gray-300">
-            This form allows you to distribute relief funds directly to <strong>beneficiaries only</strong>. 
+            This form allows you to distribute relief funds directly to <strong>beneficiaries only</strong>.
             Beneficiaries are individuals who have registered for assistance and have been verified by the system.
             Funds come from <strong>verified donations in ETH</strong> and will be transferred directly to their connected wallet addresses.
           </p>
           <div className="mt-3 p-3 bg-green-900/20 border border-green-900/50 rounded">
             <p className="text-xs text-green-300">
-              <strong>Available from Verified Donations:</strong> {totalAvailableFunds.toFixed(6)} ETH (₹{(totalAvailableFunds * ethToInrRate).toFixed(2)} INR) 
+              <strong>Available from Verified Donations:</strong> {totalAvailableFunds.toFixed(6)} ETH (₹{(totalAvailableFunds * ethToInrRate).toFixed(2)} INR)
               <span className="ml-2 text-gray-300">({verifiedDonations.length} donations)</span>
             </p>
             {process.env.NODE_ENV === 'development' && verifiedDonations.length > 0 && (
@@ -374,10 +376,10 @@ export default function FundDistribution() {
                 <summary className="text-xs text-blue-300 cursor-pointer">Show donation details</summary>
                 <div className="mt-2 space-y-1">
                   {verifiedDonations.slice(0, 5).map((donation, idx) => {
-                    const displayAmount = donation.amountDisplay 
+                    const displayAmount = donation.amountDisplay
                       ? parseFloat(donation.amountDisplay)
-                      : donation.amount > 1000000 
-                        ? donation.amount / 1e18 
+                      : donation.amount > 1000000
+                        ? donation.amount / 1e18
                         : donation.amount;
                     return (
                       <div key={idx} className="text-xs text-gray-400 flex justify-between">
@@ -397,7 +399,7 @@ export default function FundDistribution() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">
-              Select Beneficiary * 
+              Select Beneficiary *
               <span className="text-xs text-blue-400 ml-2">(Individuals in need of assistance)</span>
             </label>
             <select
@@ -446,11 +448,10 @@ export default function FundDistribution() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">After distribution:</span>
-                  <span className={`font-medium ${
-                    totalAvailableFunds - parseFloat(amount || '0') >= 0 
-                      ? 'text-blue-400' 
+                  <span className={`font-medium ${totalAvailableFunds - parseFloat(amount || '0') >= 0
+                      ? 'text-blue-400'
                       : 'text-red-400'
-                  }`}>
+                    }`}>
                     {(totalAvailableFunds - parseFloat(amount || '0')).toFixed(6)} ETH
                   </span>
                 </div>
@@ -466,9 +467,9 @@ export default function FundDistribution() {
           <button
             onClick={handleDistribute}
             disabled={
-              !selectedBeneficiary || 
-              !amount || 
-              distributing || 
+              !selectedBeneficiary ||
+              !amount ||
+              distributing ||
               totalAvailableFunds === 0 ||
               totalAvailableFunds < parseFloat(amount || '0')
             }

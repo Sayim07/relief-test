@@ -108,7 +108,7 @@ export interface ReliefFund {
   remainingAmount: number; // Remaining to distribute
   status: FundStatus;
   category?: string;
-  targetBeneficiaries?: string[]; // Beneficiary UIDs
+  targetTicketRaisers?: string[]; // Ticket Raiser IDs (if applicable)
   createdBy: string; // Admin UID
   createdAt: Date;
   updatedAt: Date;
@@ -117,31 +117,7 @@ export interface ReliefFund {
   };
 }
 
-/**
- * Beneficiary Fund - Funds assigned to beneficiaries
- */
-export interface BeneficiaryFund {
-  id: string;
-  beneficiaryId: string; // Beneficiary UID
-  beneficiaryEmail: string;
-  beneficiaryName?: string;
-  reliefFundId: string; // Source relief fund
-  amount: number; // Amount assigned
-  amountDisplay: string;
-  currency: string;
-  category?: string;
-  status: FundStatus;
-  assignedBy: string; // Admin UID
-  assignedAt: Date;
-  distributedAmount: number; // Amount distributed to relief partners
-  remainingAmount: number; // Remaining to distribute
-  transactionHash?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  metadata?: {
-    [key: string]: any;
-  };
-}
+
 
 /**
  * Relief Partner Assignment - Funds assigned to relief partners
@@ -151,17 +127,16 @@ export interface ReliefPartnerAssignment {
   reliefPartnerId: string; // Relief Partner UID
   reliefPartnerEmail: string;
   reliefPartnerName?: string;
-  beneficiaryFundId: string; // Source beneficiary fund
-  beneficiaryId: string; // Beneficiary UID
-  beneficiaryEmail: string;
-  beneficiaryName?: string;
+  sourceTicketId?: string; // Source relief ticket
+  recipientPhone: string;
+  recipientName?: string;
   amount: number; // Amount assigned
   amountDisplay: string;
   currency: string;
   category?: string;
   purpose?: string; // Purpose of the assignment
   status: AssignmentStatus;
-  assignedBy: string; // Beneficiary UID
+  assignedBy: string; // Admin UID or System
   assignedAt: Date;
   completedAt?: Date;
   spentAmount: number; // Amount spent
@@ -240,9 +215,10 @@ export interface ReliefRequest {
   description?: string;
   status: ReliefRequestStatus;
   approvedAmount?: number;
-  beneficiaryWallet?: string;
+  recipientWallet?: string;
   verifiedAt?: Date;
   verifiedBy?: string; // Admin UID
+  partnerKey?: string; // Relief Partner Key who vouched/created this ticket
   evidenceImage?: string; // URL or Base64 of victim's ID/Impact
   evidenceVideo?: string; // URL to short verification video
   evidenceMetadata?: {
@@ -264,7 +240,7 @@ export interface Transaction {
   category: string;
   reliefPartnerKey: string;
   txHash: string;
-  route: 'direct' | 'mediated';
+  route: 'direct' | 'ticket';
   status: 'verified';
   createdAt: Date;
 }

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { donationService, reliefFundService, beneficiaryFundService, receiptService } from '@/lib/firebase/services/index';
-import { Donation, ReliefFund, BeneficiaryFund, Receipt } from '@/lib/types/database';
+import { donationService, reliefFundService, receiptService, reliefPartnerAssignmentService } from '@/lib/firebase/services/index';
+import { Donation, ReliefFund, Receipt, ReliefPartnerAssignment } from '@/lib/types/database';
 import { TrendingUp, IndianRupee, Users, FileText, CheckCircle, Clock, XCircle, Activity } from 'lucide-react';
 
 export default function AdminAnalytics() {
@@ -14,7 +14,7 @@ export default function AdminAnalytics() {
     rejectedDonations: 0,
     totalFunds: 0,
     distributedFunds: 0,
-    activeBeneficiaries: 0,
+    activePartners: 0,
     totalReceipts: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -29,18 +29,18 @@ export default function AdminAnalytics() {
     try {
       setLoading(true);
 
-      const [allDonations, allFunds, allBeneficiaryFunds, allReceipts] = await Promise.all([
+      const [allDonations, allFunds, allReceipts, allAssignments] = await Promise.all([
         donationService.getByStatus('verified').catch(() => []),
         reliefFundService.getAll().catch(() => []),
-        beneficiaryFundService.getActive().catch(() => []),
         receiptService.getByStatus('verified').catch(() => []),
+        reliefPartnerAssignmentService.getAll().catch(() => []),
       ]);
 
       const pending = await donationService.getByStatus('pending').catch(() => []);
       const rejected = await donationService.getByStatus('rejected').catch(() => []);
 
-      const totalAmount = allDonations.reduce((sum, d) => sum + parseFloat(d.amountDisplay || '0'), 0);
-      const distributedAmount = allFunds.reduce((sum, f) => sum + parseFloat(f.distributedAmount.toString()) / 1e18, 0);
+      const totalAmount = allDonations.reduce((sum: number, d: Donation) => sum + parseFloat(d.amountDisplay || '0'), 0);
+      const distributedAmount = allFunds.reduce((sum: number, f: ReliefFund) => sum + parseFloat(f.distributedAmount.toString()) / 1e18, 0);
 
       setStats({
         totalDonations: allDonations.length + pending.length + rejected.length,
@@ -48,19 +48,19 @@ export default function AdminAnalytics() {
         verifiedDonations: allDonations.length,
         pendingDonations: pending.length,
         rejectedDonations: rejected.length,
-        totalFunds: allFunds.reduce((sum, f) => sum + parseFloat(f.totalAmount.toString()) / 1e18, 0),
+        totalFunds: allFunds.reduce((sum: number, f: ReliefFund) => sum + parseFloat(f.totalAmount.toString()) / 1e18, 0),
         distributedFunds: distributedAmount,
-        activeBeneficiaries: allBeneficiaryFunds.length,
+        activePartners: new Set(allAssignments.filter((a: ReliefPartnerAssignment) => a.status === 'active').map((a: ReliefPartnerAssignment) => a.reliefPartnerId)).size,
         totalReceipts: allReceipts.length,
       });
 
       // Get recent items
-      const recent = [...allDonations, ...pending].sort((a, b) =>
+      const recent = [...allDonations, ...pending].sort((a: Donation, b: Donation) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ).slice(0, 5);
       setRecentDonations(recent);
 
-      const recentFundsList = allFunds.sort((a, b) =>
+      const recentFundsList = allFunds.sort((a: ReliefFund, b: ReliefFund) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ).slice(0, 5);
       setRecentFunds(recentFundsList);
@@ -130,9 +130,9 @@ export default function AdminAnalytics() {
             </div>
           </div>
           <h3 className="text-2xl font-bold text-white mb-1">
-            {stats.activeBeneficiaries}
+            {stats.activePartners}
           </h3>
-          <p className="text-sm text-gray-400">Active Beneficiaries</p>
+          <p className="text-sm text-gray-400">Active Partners</p>
         </div>
       </div>
 
@@ -193,10 +193,10 @@ export default function AdminAnalytics() {
                       {donation.donorName || donation.donorEmail}
                     </p>
                   </div>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${donation.status === 'verified' ? 'bg-green-900/30 text-green-400' :
-                      donation.status === 'pending' ? 'bg-yellow-900/30 text-yellow-500' :
-                        'bg-red-900/30 text-red-400'
-                    }`}>
+                  <span className={`px - 2 py - 1 rounded text - xs font - medium ${donation.status === 'verified' ? 'bg-green-900/30 text-green-400' :
+                    donation.status === 'pending' ? 'bg-yellow-900/30 text-yellow-500' :
+                      'bg-red-900/30 text-red-400'
+                    } `}>
                     {donation.status}
                   </span>
                 </div>
@@ -218,10 +218,10 @@ export default function AdminAnalytics() {
                     <span className="text-gray-400">
                       ₹{fund.totalAmountDisplay}
                     </span>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${fund.status === 'active' ? 'bg-green-900/30 text-green-400' :
-                        fund.status === 'distributed' ? 'bg-blue-900/30 text-blue-400' :
-                          'bg-gray-800 text-gray-300'
-                      }`}>
+                    <span className={`px - 2 py - 1 rounded text - xs font - medium ${fund.status === 'active' ? 'bg-green-900/30 text-green-400' :
+                      fund.status === 'distributed' ? 'bg-blue-900/30 text-blue-400' :
+                        'bg-gray-800 text-gray-300'
+                      } `}>
                       {fund.status}
                     </span>
                   </div>

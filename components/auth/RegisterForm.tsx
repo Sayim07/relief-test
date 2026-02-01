@@ -6,7 +6,10 @@ import { useWallet } from '@/hooks/useWallet';
 import { useRouter } from 'next/navigation';
 import { UserRole } from '@/lib/types/user';
 import { categoryService } from '@/lib/firebase/services';
-import { Mail, Lock, User, Phone, MapPin, Building, AlertCircle, Loader2, Tag, Wallet } from 'lucide-react';
+import { Mail, Lock, User, Phone, MapPin, Building, AlertCircle, Loader2, Tag, Wallet, Camera, Video, Upload, X } from 'lucide-react';
+import { storage } from '@/lib/firebase/config';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 
 interface RegisterFormProps {
   role: UserRole;
@@ -28,8 +31,11 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
     organization: '',
     location: '',
     walletAddress: '',
-    category: '',
+    reliefCategories: [] as string[],
   });
+  const [proofImages, setProofImages] = useState<File[]>([]);
+  const [proofVideos, setProofVideos] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [localError, setLocalError] = useState<string | null>(null);
 
   // Load categories for relief partners
@@ -41,7 +47,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
 
   // Auto-populate wallet address when wallet is connected
   useEffect(() => {
-    if ((role === 'relief_partner' || role === 'beneficiary') && isConnected && address) {
+    if (role === 'relief_partner' && isConnected && address) {
       setFormData((prev) => ({
         ...prev,
         walletAddress: address,
@@ -83,6 +89,23 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
     }
   };
 
+  const generatePartnerKey = (categories: string[]) => {
+    const primary = categories.length > 0 ? categories[0].toUpperCase() : 'GEN';
+    const random = Math.random().toString(16).substring(2, 8).toUpperCase();
+    return `RP-${primary}-${random}`;
+  };
+
+  const uploadFiles = async (files: File[], path: string): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of files) {
+      const fileRef = ref(storage, `${path}/${uuidv4()}_${file.name}`);
+      const snapshot = await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(snapshot.ref);
+      urls.push(url);
+    }
+    return urls;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
@@ -99,14 +122,20 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
     }
 
     // Validate relief partner category
-    if (role === 'relief_partner' && !formData.category) {
-      setLocalError('Please select a category for relief operations');
+    if (role === 'relief_partner' && formData.reliefCategories.length === 0) {
+      setLocalError('Please select at least one category for relief operations');
       return;
     }
 
     // Validate relief partner wallet
     if (role === 'relief_partner' && !formData.walletAddress) {
       setLocalError('Wallet address is required for relief partners');
+      return;
+    }
+
+    // Validate proof for relief partners
+    if (role === 'relief_partner' && proofImages.length === 0 && proofVideos.length === 0) {
+      setLocalError('Please upload at least one image or video as proof');
       return;
     }
 
@@ -117,8 +146,14 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
       if (formData.organization) additionalData.organization = formData.organization;
       if (formData.location) additionalData.location = formData.location;
       if (formData.walletAddress) additionalData.walletAddress = formData.walletAddress;
-      if (role === 'relief_partner' && formData.category) {
-        additionalData.reliefCategories = [formData.category];
+
+      if (role === 'relief_partner') {
+        additionalData.reliefCategories = formData.reliefCategories;
+        additionalData.reliefPartnerKey = generatePartnerKey(formData.reliefCategories);
+
+        // Upload proofs
+        additionalData.proofImages = await uploadFiles(proofImages, `proofs/${formData.email}/images`);
+        additionalData.proofVideos = await uploadFiles(proofVideos, `proofs/${formData.email}/videos`);
       }
 
       const { profile } = await register(
@@ -136,9 +171,6 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
         switch (profile.role) {
           case 'admin':
             router.push('/admin');
-            break;
-          case 'beneficiary':
-            router.push('/beneficiary');
             break;
           case 'donor':
             router.push('/donor');
@@ -160,8 +192,8 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
       setLocalError(null);
 
       // Validate relief partner category and wallet
-      if (role === 'relief_partner' && !formData.category) {
-        setLocalError('Please select a category for relief operations');
+      if (role === 'relief_partner' && formData.reliefCategories.length === 0) {
+        setLocalError('Please select at least one category for relief operations');
         return;
       }
 
@@ -176,8 +208,8 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
       if (formData.organization) additionalData.organization = formData.organization;
       if (formData.location) additionalData.location = formData.location;
       if (formData.walletAddress) additionalData.walletAddress = formData.walletAddress;
-      if (role === 'relief_partner' && formData.category) {
-        additionalData.reliefCategories = [formData.category];
+      if (role === 'relief_partner' && formData.reliefCategories.length > 0) {
+        additionalData.reliefCategories = formData.reliefCategories;
       }
 
       const { profile } = await signInWithGoogle(role, additionalData);
@@ -188,9 +220,6 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
         switch (profile.role) {
           case 'admin':
             router.push('/admin');
-            break;
-          case 'beneficiary':
-            router.push('/beneficiary');
             break;
           case 'donor':
             router.push('/donor');
@@ -298,16 +327,17 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
         </div>
       </div>
 
-      {(role === 'relief_partner' || role === 'beneficiary') && (
+      {role === 'relief_partner' && (
         <div>
           <label htmlFor="organization" className="block text-sm font-medium text-gray-400 mb-1">
-            Organization
+            Organization Name *
           </label>
           <div className="relative">
             <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input
               id="organization"
               type="text"
+              required
               value={formData.organization}
               onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
               className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500"
@@ -319,32 +349,37 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
 
       {role === 'relief_partner' && (
         <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-400 mb-1">
-            Relief Category * <span className="text-xs text-gray-500">(Funds you will distribute)</span>
+          <label className="block text-sm font-medium text-gray-400 mb-2">
+            Relief Categories * <span className="text-xs text-gray-500">(Select one or more)</span>
           </label>
-          <div className="relative">
-            <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
-            <select
-              id="category"
-              required
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              disabled={categoriesLoading}
-              className="w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 disabled:opacity-50"
-            >
-              <option value="">
-                {categoriesLoading ? 'Loading categories...' : 'Select your relief category'}
-              </option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name} - {cat.description}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-2">
+            {categories.map((cat) => (
+              <label
+                key={cat.id}
+                className={`flex items-center gap-2 p-2 border rounded-lg cursor-pointer transition-all ${formData.reliefCategories.includes(cat.id)
+                  ? 'bg-blue-600/20 border-blue-500 text-blue-400'
+                  : 'bg-[#1a1a2e] border-[#392e4e] text-gray-500 hover:border-gray-600'
+                  }`}
+              >
+                <input
+                  type="checkbox"
+                  className="hidden"
+                  checked={formData.reliefCategories.includes(cat.id)}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setFormData(prev => ({
+                      ...prev,
+                      reliefCategories: checked
+                        ? [...prev.reliefCategories, cat.id]
+                        : prev.reliefCategories.filter(id => id !== cat.id)
+                    }));
+                  }}
+                />
+                <Tag className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-tighter">{cat.name}</span>
+              </label>
+            ))}
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            You will specialize in distributing funds for this category
-          </p>
         </div>
       )}
 
@@ -365,34 +400,98 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
         </div>
       </div>
 
-      {role === 'beneficiary' && (
-        <div>
-          <label htmlFor="walletAddress" className="block text-sm font-medium text-gray-400 mb-1">
-            Wallet Address (Optional)
-            {isConnected && (
-              <span className="ml-2 text-xs text-green-400">✓ Connected</span>
-            )}
-          </label>
-          <div className="relative">
-            <Wallet className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
-            <input
-              id="walletAddress"
-              type="text"
-              value={formData.walletAddress}
-              onChange={(e) => setFormData({ ...formData, walletAddress: e.target.value })}
-              readOnly={isConnected}
-              className={`w-full pl-10 pr-4 py-2 bg-[#1a1a2e] border border-[#392e4e] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm text-white placeholder-gray-500 ${isConnected ? 'cursor-not-allowed opacity-75' : ''
-                }`}
-              placeholder="0x..."
-            />
+      {role === 'relief_partner' && (
+        <div className="space-y-4">
+          <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
+            <label className="block text-sm font-bold text-blue-400 mb-3 uppercase tracking-widest text-[10px]">
+              Submission Evidence (Images/Videos) *
+            </label>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('image-upload')?.click()}
+                  className="w-full aspect-square bg-[#1a1a2e] border-2 border-dashed border-[#392e4e] rounded-xl flex flex-col items-center justify-center gap-2 hover:border-blue-500 transition-all group"
+                >
+                  <Camera className="w-8 h-8 text-gray-500 group-hover:text-blue-500" />
+                  <span className="text-[10px] font-black uppercase text-gray-600">Add Image</span>
+                </button>
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      setProofImages(prev => [...prev, ...Array.from(e.target.files!)]);
+                    }
+                  }}
+                />
+                <div className="flex flex-wrap gap-2">
+                  {proofImages.map((file, i) => (
+                    <div key={i} className="relative group">
+                      <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center overflow-hidden">
+                        <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setProofImages(prev => prev.filter((_, idx) => idx !== i))}
+                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Video Upload */}
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('video-upload')?.click()}
+                  className="w-full aspect-square bg-[#1a1a2e] border-2 border-dashed border-[#392e4e] rounded-xl flex flex-col items-center justify-center gap-2 hover:border-blue-500 transition-all group"
+                >
+                  <Video className="w-8 h-8 text-gray-500 group-hover:text-blue-500" />
+                  <span className="text-[10px] font-black uppercase text-gray-600">Add Video</span>
+                </button>
+                <input
+                  id="video-upload"
+                  type="file"
+                  accept="video/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      setProofVideos(prev => [...prev, ...Array.from(e.target.files!)]);
+                    }
+                  }}
+                />
+                <div className="flex flex-wrap gap-2">
+                  {proofVideos.map((file, i) => (
+                    <div key={i} className="relative group">
+                      <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center overflow-hidden">
+                        <Video className="w-4 h-4 text-blue-400" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setProofVideos(prev => prev.filter((_, idx) => idx !== i))}
+                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <p className="text-[9px] text-gray-600 mt-4 leading-relaxed italic">
+              * Upload legal documentation, mission statements, or active relief operation footage to expedite verification.
+            </p>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            {isConnected ? (
-              <>💰 Your MetaMask wallet is connected. You can proceed with registration.</>
-            ) : (
-              <>Connect your MetaMask wallet or enter manually (optional).</>
-            )}
-          </p>
         </div>
       )}
 

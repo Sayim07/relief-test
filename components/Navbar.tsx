@@ -66,15 +66,7 @@ export default function Navbar() {
                     </Link>
                   )}
 
-                  {hasRole('beneficiary') && (
-                    <Link
-                      href="/beneficiary"
-                      className="flex items-center gap-1 px-3 py-2 text-gray-300 hover:text-blue-400 hover:bg-blue-900/20 rounded-lg transition-colors"
-                    >
-                      <FileText className="w-4 h-4" />
-                      Beneficiary
-                    </Link>
-                  )}
+
 
                   {hasRole('relief_partner') && (
                     <Link

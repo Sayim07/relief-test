@@ -11,30 +11,31 @@ const RELIEF_TOKEN_ABI = [
   // Custom functions
   'function whitelistBeneficiary(address beneficiary, string[] categories, uint256[] limits)',
   'function removeBeneficiary(address beneficiary)',
-  'function whitelistReliefPartner(address reliefPartner)',
+  'function whitelistReliefPartner(address reliefPartner, string partnerKey)',
   'function removeReliefPartner(address reliefPartner)',
   'function distributeRelief(address to, uint256 amount, string category)',
   'function transferWithCategory(address to, uint256 amount, string category) returns (bool)',
   'function beneficiaries(address) view returns (bool isWhitelisted, uint256 totalReceived)',
   'function getCategorySpending(address beneficiary, string category) view returns (uint256 spent, uint256 limit)',
   'function getTransaction(uint256 txId) view returns (address from, address to, uint256 amount, string category, uint256 timestamp, string description)',
-  'function donations(uint256) view returns (address donor, uint256 amount, string category, uint256 timestamp, bool verified, string description, string transactionHash)',
+  'function donations(uint256) view returns (address donor, uint256 amount, string category, string partnerKey, uint256 timestamp, bool verified, string routeType, string description, string transactionHash)',
   'function donationCount() view returns (uint256)',
   'function getReliefPartners(address beneficiary) view returns (address[])',
-  'function recordDonation(address donor, uint256 amount, string category, string description, string transactionHash)',
+  'function recordDonation(address donor, uint256 amount, string category, string partnerKey, string routeType, string description, string transactionHash)',
   'function verifyDonation(uint256 donationId)',
   'function assignReliefPartner(address beneficiary, address reliefPartner)',
   'function transactionCount() view returns (uint256)',
-  'function donate(uint256 amount, string category, string description, string transactionHash)',
+  'function donate(uint256 amount, string category, string partnerKey, string routeType, string description, string transactionHash)',
   'function hasRole(bytes32 role, address account) view returns (bool)',
   'function RELIEF_PARTNER_ROLE() view returns (bytes32)',
   // Events
   'event BeneficiaryWhitelisted(address indexed beneficiary, string[] categories, uint256[] limits)',
   'event ReliefDistributed(address indexed to, uint256 amount, string category)',
-  'event TransactionRecorded(uint256 indexed txId, address from, address to, uint256 amount, string category)',
-  'event DonationRecorded(uint256 indexed donationId, address indexed donor, uint256 amount, string category)',
+  'event TransactionRecorded(uint256 indexed txId, address from, address to, uint256 amount, string category, string partnerKey)',
+  'event DonationRecorded(uint256 indexed donationId, address indexed donor, uint256 amount, string category, string partnerKey, string routeType)',
   'event DonationVerified(uint256 indexed donationId, address indexed verifier)',
   'event ReliefPartnerAssigned(address indexed beneficiary, address indexed reliefPartner)',
+  'event PartnerKeyIssued(string partnerKey, address indexed partnerAddress)',
   'event Transfer(address indexed from, address indexed to, uint256 value)',
 ];
 
@@ -70,8 +71,8 @@ export const reliefTokenFunctions = {
     return await tx.wait();
   },
 
-  whitelistReliefPartner: async (contract: ethers.Contract, reliefPartner: string) => {
-    const tx = await contract.whitelistReliefPartner(reliefPartner);
+  whitelistReliefPartner: async (contract: ethers.Contract, reliefPartner: string, partnerKey: string) => {
+    const tx = await contract.whitelistReliefPartner(reliefPartner, partnerKey);
     return await tx.wait();
   },
 
@@ -91,8 +92,8 @@ export const reliefTokenFunctions = {
   },
 
   // Donation tracking
-  recordDonation: async (contract: ethers.Contract, donor: string, amount: bigint, category: string, description: string, transactionHash: string) => {
-    const tx = await contract.recordDonation(donor, amount, category, description, transactionHash);
+  recordDonation: async (contract: ethers.Contract, donor: string, amount: bigint, category: string, partnerKey: string, routeType: string, description: string, transactionHash: string) => {
+    const tx = await contract.recordDonation(donor, amount, category, partnerKey, routeType, description, transactionHash);
     return await tx.wait();
   },
 
@@ -106,8 +107,8 @@ export const reliefTokenFunctions = {
     return await tx.wait();
   },
 
-  donate: async (contract: ethers.Contract, amount: bigint, category: string, description: string, transactionHash: string) => {
-    const tx = await contract.donate(amount, category, description, transactionHash);
+  donate: async (contract: ethers.Contract, amount: bigint, category: string, partnerKey: string, routeType: string, description: string, transactionHash: string) => {
+    const tx = await contract.donate(amount, category, partnerKey, routeType, description, transactionHash);
     return await tx.wait();
   },
 

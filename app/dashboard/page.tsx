@@ -20,9 +20,6 @@ export default function DashboardPage() {
         case 'donor':
           router.push('/donor');
           break;
-        case 'beneficiary':
-          router.push('/beneficiary');
-          break;
         case 'relief_partner':
           router.push('/relief-partner');
           break;

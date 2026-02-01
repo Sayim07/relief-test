@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   XCircle,
   ExternalLink,
-  Key
+  Key,
+  Video
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -182,7 +183,10 @@ export default function AdminPage() {
                     <div className="flex lg:flex-col justify-end items-center lg:items-end gap-4 min-w-[200px] border-t lg:border-t-0 lg:border-l border-[#392e4e] pt-6 lg:pt-0 lg:pl-10">
                       {!partner.verified ? (
                         <button
-                          onClick={() => setVerifyingPartner(partner)}
+                          onClick={() => {
+                            setVerifyingPartner(partner);
+                            setPartnerKey(partner.reliefPartnerKey || '');
+                          }}
                           className="w-full lg:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-blue-900/20 active:scale-95 group/btn"
                         >
                           <ShieldCheck className="w-5 h-5 group-hover/btn:scale-125 transition-transform" /> START AUDIT
@@ -246,10 +250,40 @@ export default function AdminPage() {
 
                 <div className="space-y-6">
                   <div className="space-y-4">
-                    <div className="p-4 bg-black/50 border border-[#392e4e] rounded-2xl space-y-2">
-                      <p className="text-[10px] font-black text-gray-500 uppercase">Agency Profile</p>
-                      <p className="text-lg font-bold text-white tracking-tight">{verifyingPartner.displayName}</p>
-                      <p className="text-xs text-gray-400 font-medium italic">{verifyingPartner.organization}</p>
+                    <div className="p-4 bg-black/50 border border-[#392e4e] rounded-2xl space-y-4">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-gray-500 uppercase">Agency Profile</p>
+                        <p className="text-lg font-bold text-white tracking-tight">{verifyingPartner.displayName}</p>
+                        <p className="text-xs text-gray-400 font-medium italic">{verifyingPartner.organization}</p>
+                      </div>
+
+                      {/* Proofs Section */}
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Verification Evidence</p>
+                        <div className="grid grid-cols-4 gap-2">
+                          {verifyingPartner.proofImages?.map((url, i) => (
+                            <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="relative aspect-square rounded-lg border border-[#392e4e] overflow-hidden group/img">
+                              <img src={url} alt="Proof" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-blue-600/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                <ExternalLink className="w-4 h-4 text-white" />
+                              </div>
+                            </a>
+                          ))}
+                          {verifyingPartner.proofVideos?.map((url, i) => (
+                            <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="relative aspect-square rounded-lg border border-[#392e4e] bg-black/50 flex items-center justify-center group/vid">
+                              <Video className="w-6 h-6 text-blue-500" />
+                              <div className="absolute inset-0 bg-blue-600/20 opacity-0 group-hover/vid:opacity-100 transition-opacity flex items-center justify-center">
+                                <ExternalLink className="w-4 h-4 text-white" />
+                              </div>
+                            </a>
+                          ))}
+                          {(!verifyingPartner.proofImages?.length && !verifyingPartner.proofVideos?.length) && (
+                            <div className="col-span-4 py-4 text-center border border-dashed border-[#392e4e] rounded-xl">
+                              <p className="text-[10px] text-gray-600 uppercase font-black">No Evidence Provided</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="space-y-2">

@@ -41,9 +41,6 @@ export default function LoginForm({ role, redirectTo }: LoginFormProps) {
           case 'admin':
             router.push('/admin');
             break;
-          case 'beneficiary':
-            router.push('/beneficiary');
-            break;
           case 'donor':
             router.push('/donor');
             break;
@@ -75,9 +72,6 @@ export default function LoginForm({ role, redirectTo }: LoginFormProps) {
         switch (profile.role) {
           case 'admin':
             router.push('/admin');
-            break;
-          case 'beneficiary':
-            router.push('/beneficiary');
             break;
           case 'donor':
             router.push('/donor');

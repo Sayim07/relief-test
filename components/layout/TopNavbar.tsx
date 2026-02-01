@@ -51,8 +51,7 @@ export default function TopNavbar({ onMenuClick }: TopNavbarProps) {
     switch (role) {
       case 'admin':
         return 'bg-purple-900/30 text-purple-400 border-purple-500/30';
-      case 'beneficiary':
-        return 'bg-green-900/30 text-green-400 border-green-500/30';
+
       case 'donor':
         return 'bg-blue-900/30 text-blue-400 border-blue-500/30';
       case 'relief_partner':
