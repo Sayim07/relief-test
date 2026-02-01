@@ -114,7 +114,7 @@ export default function AuthPage() {
           </div>
 
           {/* Role Grid with MagicBento */}
-          <div className="mb-20">
+          <div className="mb-20 w-full flex justify-center">
             <MagicBento
               data={bentoData}
               glowColor="59, 130, 246"
@@ -124,7 +124,7 @@ export default function AuthPage() {
               cardClassName="cursor-target"
               enableBentoGrid={false}
               centered={true}
-              gridClassName="max-w-6xl mx-auto justify-center place-items-center"
+              gridClassName="grid grid-cols-3 gap-8 max-w-4xl"
             />
           </div>
 
