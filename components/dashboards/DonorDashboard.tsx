@@ -44,8 +44,11 @@ export default function DonorDashboard() {
     ticketDonations: 0,
     walletBalance: '0.00',
     totalTransactions: 0,
+    totalDonatedEth: '0.0000',
+    totalDonatedInr: '0.00'
   });
   const [loading, setLoading] = useState(true);
+  const [ethPrice, setEthPrice] = useState(0);
   const [categories, setCategories] = useState<any[]>([]);
   const [verifiedTickets, setVerifiedTickets] = useState<ReliefRequest[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -65,6 +68,21 @@ export default function DonorDashboard() {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Fetch ETH price in INR
+    const fetchEthPrice = async () => {
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr');
+        const data = await res.json();
+        if (data.ethereum?.inr) {
+          setEthPrice(data.ethereum.inr);
+        }
+      } catch (e) {
+        console.error('Failed to fetch ETH price:', e);
+        setEthPrice(250000); // Fallback to approx rate
+      }
+    };
+    fetchEthPrice();
+
     if (profile?.uid) {
       loadDashboardData();
     }
@@ -105,7 +123,9 @@ export default function DonorDashboard() {
       setTransactions(userTxs);
 
       setMetrics({
-        totalDonated: totalDonated.toFixed(2),
+        totalDonated: totalDonated.toFixed(4), // Legacy field, kept for safety
+        totalDonatedEth: totalDonated.toFixed(4),
+        totalDonatedInr: (totalDonated * (ethPrice || 250000)).toLocaleString('en-IN', { maximumFractionDigits: 2 }),
         directDonations: userTxs.filter((t: Transaction) => t.route === 'direct').length,
         ticketDonations: userTxs.filter((t: Transaction) => t.route === 'ticket').length,
         walletBalance: balance,
@@ -129,6 +149,17 @@ export default function DonorDashboard() {
       setPartnerLoading(false);
     }
   };
+
+  // Re-calculate metrics when ETH price updates to ensure real-time currency conversion
+  useEffect(() => {
+    if (metrics.totalDonatedEth !== '0.0000' && ethPrice > 0) {
+      const ethVal = parseFloat(metrics.totalDonatedEth);
+      setMetrics(prev => ({
+        ...prev,
+        totalDonatedInr: (ethVal * ethPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })
+      }));
+    }
+  }, [ethPrice]);
 
   const loadVerifiedTickets = async (cat: string) => {
     try {
@@ -275,11 +306,14 @@ export default function DonorDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard title="Total Philanthropy" value={`₹${metrics.totalDonated}`} icon={HandHeart} subtitle="Accumulated Impact" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <MetricCard
+          title="Total Philanthropy"
+          value={`${metrics.totalDonatedEth} ETH`}
+          icon={HandHeart}
+          subtitle={`≈ ₹${metrics.totalDonatedInr}`}
+        />
         <MetricCard title="Direct Agency Support" value={metrics.directDonations} icon={Zap} subtitle="To Certified Partners" />
-        <MetricCard title="Direct Ticket Support" value={metrics.ticketDonations} icon={Ticket} subtitle="To Verified Needers" />
-        <MetricCard title="Global Rank" value="#124" icon={Globe} subtitle="Contribution Leaderboard" />
       </div>
 
       {/* Donation Flow Portal */}
