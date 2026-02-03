@@ -169,14 +169,20 @@ export default function RaiseTicketPage() {
             );
             logStep('STEP 2 COMPLETE: Ticket created', { ticketId });
 
-            // Step 3: Update User Profile
-            logStep('STEP 3: Updating partner status');
+            // Step 3: Update User Profile (Mirroring data for Dashboard visibility)
+            logStep('STEP 3: Updating partner status and mirroring details');
             await withTimeout(
                 userService.update(profile.uid, {
                     hasSubmittedTicket: true,
-                    verified: false
+                    verified: false,
+                    organization: formData.organizationName,
+                    phone: phone,
+                    location: formData.location,
+                    reliefCategories: formData.categories,
+                    proofImages: imageUrls,
+                    proofVideos: videoUrls
                 }),
-                15000,
+                30000,
                 'Update User Status'
             );
             logStep('STEP 3 COMPLETE: User profile updated');

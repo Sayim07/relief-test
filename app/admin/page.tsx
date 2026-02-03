@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { AuthGuard } from '@/lib/middleware/withAuth';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { userService } from '@/lib/firebase/services';
+import { userService, verificationTicketService } from '@/lib/firebase/services';
 import type { UserProfile } from '@/lib/types/user';
+import type { VerificationTicket } from '@/lib/types/database';
+import { Phone } from 'lucide-react';
 import {
   Users,
   ShieldCheck,
@@ -31,6 +33,7 @@ export default function AdminPage() {
 
   // Verification Modal State
   const [verifyingPartner, setVerifyingPartner] = useState<UserProfile | null>(null);
+  const [activeTicket, setActiveTicket] = useState<VerificationTicket | null>(null);
   const [partnerKey, setPartnerKey] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -186,9 +189,16 @@ export default function AdminPage() {
                     <div className="flex lg:flex-col justify-end items-center lg:items-end gap-4 min-w-[200px] border-t lg:border-t-0 lg:border-l border-[#392e4e] pt-6 lg:pt-0 lg:pl-10">
                       {!partner.verified ? (
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             setVerifyingPartner(partner);
                             setPartnerKey(partner.reliefPartnerKey || '');
+                            // Fetch the actual ticket data for this user to get full details
+                            try {
+                              const ticket = await verificationTicketService.getByUser(partner.uid);
+                              setActiveTicket(ticket);
+                            } catch (e) {
+                              console.error('Failed to fetch ticket details:', e);
+                            }
                           }}
                           className="w-full lg:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black transition-all shadow-lg shadow-blue-900/20 active:scale-95 group/btn"
                         >
@@ -257,14 +267,21 @@ export default function AdminPage() {
                       <div className="space-y-1">
                         <p className="text-[10px] font-black text-gray-500 uppercase">Agency Profile</p>
                         <p className="text-lg font-bold text-white tracking-tight">{verifyingPartner.displayName}</p>
-                        <p className="text-xs text-gray-400 font-medium italic">{verifyingPartner.organization}</p>
+                        <p className="text-xs text-gray-400 font-medium italic">
+                          {activeTicket?.organizationName || verifyingPartner.organization || 'Organization Name Not Set'}
+                        </p>
+                        {/* Phone Number Addition */}
+                        <p className="flex items-center gap-2 text-xs text-blue-400 font-mono mt-1">
+                          <Phone className="w-3 h-3" />
+                          {activeTicket?.phone || verifyingPartner.phone || 'No Phone Registered'}
+                        </p>
                       </div>
 
                       {/* Proofs Section */}
                       <div className="space-y-3">
                         <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Verification Evidence</p>
                         <div className="grid grid-cols-4 gap-2">
-                          {verifyingPartner.proofImages?.map((url, i) => (
+                          {(activeTicket?.proofImages || verifyingPartner.proofImages)?.map((url, i) => (
                             <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="relative aspect-square rounded-lg border border-[#392e4e] overflow-hidden group/img">
                               <img src={url} alt="Proof" className="w-full h-full object-cover" />
                               <div className="absolute inset-0 bg-blue-600/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
@@ -272,7 +289,7 @@ export default function AdminPage() {
                               </div>
                             </a>
                           ))}
-                          {verifyingPartner.proofVideos?.map((url, i) => (
+                          {(activeTicket?.proofVideos || verifyingPartner.proofVideos)?.map((url, i) => (
                             <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="relative aspect-square rounded-lg border border-[#392e4e] bg-black/50 flex items-center justify-center group/vid">
                               <Video className="w-6 h-6 text-blue-500" />
                               <div className="absolute inset-0 bg-blue-600/20 opacity-0 group-hover/vid:opacity-100 transition-opacity flex items-center justify-center">
