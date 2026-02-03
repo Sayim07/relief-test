@@ -130,11 +130,11 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
     try {
       const additionalData: any = {};
 
-      if (formData.phoneNumber) additionalData.phoneNumber = formData.phoneNumber;
+      if (formData.phoneNumber) additionalData.phone = formData.phoneNumber;
       if (formData.walletAddress) additionalData.walletAddress = formData.walletAddress;
 
       if (role === 'relief_partner') {
-        additionalData.hasActiveTicket = false;
+        additionalData.hasSubmittedTicket = false;
         additionalData.verified = false;
       }
 
@@ -158,7 +158,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
             router.push('/donor');
             break;
           case 'relief_partner':
-            router.push('/relief-partner/raise-ticket');
+            router.push('/relief-partner');
             break;
           default:
             router.push('/');
@@ -201,7 +201,7 @@ export default function RegisterForm({ role, redirectTo }: RegisterFormProps) {
             router.push('/donor');
             break;
           case 'relief_partner':
-            router.push('/relief-partner/raise-ticket');
+            router.push('/relief-partner');
             break;
           default:
             router.push('/');

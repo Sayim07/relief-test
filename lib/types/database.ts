@@ -250,16 +250,21 @@ export interface Transaction {
  */
 export interface VerificationTicket {
   id: string; // Document ID
-  uid: string; // User UID of the Relief Partner
+  userId: string; // User UID of the Relief Partner
+  uid: string; // Keep for backward compatibility
   walletAddress: string;
+  phone: string;
   organizationName: string;
   categories: string[];
   location: string;
   description: string;
+  reliefPartnerKey: string;
   proofImages: string[];
   proofVideos: string[];
   status: 'pending' | 'approved' | 'rejected';
+  verified: boolean;
   rejectionReason?: string;
+  verificationTimestamp?: Date;
   createdAt: Date;
   updatedAt: Date;
   metadata?: {

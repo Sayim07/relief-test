@@ -38,7 +38,7 @@ export const userService = {
 
       // Only add hasActiveTicket for relief partners to avoid 'undefined' in Firestore
       if (user.role === 'relief_partner') {
-        userData.hasActiveTicket = false;
+        userData.hasSubmittedTicket = false;
       }
 
       await setDoc(docRef, userData);

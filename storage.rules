@@ -16,12 +16,16 @@ service firebase.storage {
               firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
     }
 
-    // Relief Partner Proofs
+    // Relief Partner Proofs (Legacy)
     match /relief_partner_proofs/{wallet}/{allPaths=**} {
-      // Allow upload if authenticated (wallet link is verified in app)
-      // In production, we should ideally check if request.auth.uid matches the owner of the wallet
       allow read: if isAdmin() || isAuthenticated();
       allow write: if isAuthenticated();
+    }
+
+    // New Multi-Phase Verification Tickets
+    match /verification_tickets/{userId}/{allPaths=**} {
+      allow read: if isAdmin() || isOwner(userId);
+      allow write: if isOwner(userId);
     }
 
     // Generic access

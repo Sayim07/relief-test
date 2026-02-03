@@ -255,6 +255,34 @@ export default function ReliefPartnerDashboard() {
   }
 
   if (!profile?.verified) {
+    // Stage A: Has NOT raised a ticket yet
+    if (!profile?.hasSubmittedTicket) {
+      return (
+        <div className="min-h-[60vh] flex items-center justify-center p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl w-full bg-[#0a0a1a] border border-[#392e4e] rounded-[3rem] p-12 text-center"
+          >
+            <div className="w-20 h-20 bg-blue-600/10 border border-blue-500/20 rounded-3xl flex items-center justify-center mx-auto mb-8">
+              <ShieldAlert className="w-10 h-10 text-blue-500" />
+            </div>
+            <h2 className="text-3xl font-black text-white mb-4">Verification Required</h2>
+            <p className="text-gray-400 mb-8 max-w-md mx-auto">
+              To start distributing relief and managing funds, you must first verify your organization's identity.
+            </p>
+            <button
+              onClick={() => window.location.href = '/relief-partner/raise-ticket'}
+              className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all hover:scale-105 active:scale-95"
+            >
+              Raise Verification Ticket
+            </button>
+          </motion.div>
+        </div>
+      );
+    }
+
+    // Stage B: HAS raised a ticket, awaiting admin
     return (
       <div className="min-h-[60vh] flex items-center justify-center p-6">
         <motion.div

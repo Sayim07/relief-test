@@ -70,15 +70,18 @@ export default function AdminPage() {
   const filteredPartners = partners.filter(p => {
     const matchesFilter =
       filter === 'all' ||
-      (filter === 'unverified' && !p.verified) ||
+      (filter === 'unverified' && !p.verified && p.hasSubmittedTicket) || // Only show unverified IF they submitted a ticket
       (filter === 'verified' && p.verified);
 
     const matchesSearch =
-      p.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.organization?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (p.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.organization?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.email.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    return matchesFilter && matchesSearch;
+    // CRITICAL: Prevent showing Phase 0 partners (registered but no ticket) in the audit list
+    const isVisibleInRoster = p.verified === true || p.hasSubmittedTicket === true;
+
+    return matchesFilter && matchesSearch && isVisibleInRoster;
   });
 
   return (

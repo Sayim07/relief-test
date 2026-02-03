@@ -5,9 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useWallet } from '@/hooks/useWallet';
 import { verificationTicketService, userService, categoryService } from '@/lib/firebase/services';
-import { storage } from '@/lib/firebase/config';
-import { ref, uploadBytes, getDownloadURL, uploadBytesResumable, UploadTaskSnapshot } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
+import { cloudinaryService } from '@/lib/cloudinaryService';
 import { Building, MapPin, Tag, FileText, Camera, Video, Upload, X, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { AuthGuard } from '@/lib/middleware/withAuth';
@@ -75,40 +73,23 @@ export default function RaiseTicketPage() {
     };
 
     const uploadFiles = async (files: File[], path: string, typeLabel: string): Promise<string[]> => {
-        logStep(`Starting ${typeLabel} upload batch`, { count: files.length });
+        if (!files || files.length === 0) return [];
 
-        const uploadPromises = files.map((file) => {
-            return new Promise<string>((resolve, reject) => {
-                const fileRef = ref(storage, `${path}/${uuidv4()}_${file.name}`);
-                const uploadTask = uploadBytesResumable(fileRef, file);
+        logStep(`Starting ${typeLabel} upload batch [Cloudinary]`, { count: files.length, folder: path });
 
-                logStep(`Uploading ${typeLabel}: ${file.name}`);
-
-                uploadTask.on('state_changed',
-                    (snapshot: UploadTaskSnapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        if (progress % 25 === 0 || progress === 100) {
-                            logStep(`Upload Progress [${file.name}]: ${progress.toFixed(0)}%`);
-                        }
-                    },
-                    (error: Error) => {
-                        logStep(`Upload Error [${file.name}]`, { error });
-                        reject(error);
-                    },
-                    async () => {
-                        const url = await getDownloadURL(uploadTask.snapshot.ref);
-                        logStep(`Completed ${typeLabel}: ${file.name}`, { url });
-                        resolve(url);
-                    }
-                );
-            });
-        });
-
-        return withTimeout(
-            Promise.all(uploadPromises),
-            60000, // Increased to 60s for resumable large files
-            `${typeLabel} Upload Batch`
-        );
+        try {
+            // Using Cloudinary service for multi-upload
+            const urls = await withTimeout(
+                cloudinaryService.uploadMultiple(files, path),
+                90000,
+                `Cloudinary ${typeLabel} Upload`
+            );
+            logStep(`[${typeLabel}] All files uploaded successfully`, { count: urls.length });
+            return urls;
+        } catch (err: any) {
+            logStep(`[${typeLabel}] BATCH FAILED`, { error: err.message });
+            throw err;
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -135,54 +116,67 @@ export default function RaiseTicketPage() {
             return;
         }
 
-        if (proofImages.length === 0 && proofVideos.length === 0) {
-            setError('Please upload at least one image or video as proof');
-            return;
-        }
+        // Media is now optional as requested for "Instant" submission
 
         try {
             setLoading(true);
 
             const wallet = address || profile.walletAddress || 'unknown';
-            logStep('Determined wallet address', { wallet });
+            const phone = profile.phone || 'N/A'; // From registration Phase 0
+            logStep('Determined identifiers', { wallet, phone });
 
-            // Step 1: Parallel Uploads
+            // Generate Relief Partner Key: RP-<CATEGORY>-<RANDOM_HASH>
+            const primaryCategory = formData.categories[0].toUpperCase();
+            const randomHash = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const generatedPartnerKey = `RP-${primaryCategory}-${randomHash}`;
+            logStep('Generated Partner Key', { generatedPartnerKey });
+
             logStep('STEP 1: Uploading media files');
             const [imageUrls, videoUrls] = await Promise.all([
-                uploadFiles(proofImages, `relief_partner_proofs/${wallet}/images`, 'IMAGES'),
-                uploadFiles(proofVideos, `relief_partner_proofs/${wallet}/videos`, 'VIDEOS')
+                proofImages.length > 0
+                    ? uploadFiles(proofImages, `verification_tickets/${profile.uid}/images`, 'IMAGES')
+                    : Promise.resolve([]),
+                proofVideos.length > 0
+                    ? uploadFiles(proofVideos, `verification_tickets/${profile.uid}/videos`, 'VIDEOS')
+                    : Promise.resolve([])
             ]);
             logStep('STEP 1 COMPLETE: Media uploaded', { images: imageUrls.length, videos: videoUrls.length });
 
-            // Step 2: Create Verification Ticket
+            // Step 2: Create Verification Ticket with PhaseFlow fields
             logStep('STEP 2: Creating Firestore ticket record');
             const ticketData = {
-                uid: profile.uid,
+                userId: profile.uid,
+                uid: profile.uid, // Keep for compatibility
                 walletAddress: wallet,
+                phone: phone,
                 organizationName: formData.organizationName,
-                categories: formData.categories,
                 location: formData.location,
                 description: formData.description,
+                categories: formData.categories,
+                reliefPartnerKey: generatedPartnerKey,
                 proofImages: imageUrls,
                 proofVideos: videoUrls,
-                status: 'pending' as const
+                status: 'pending' as const,
+                verified: false,
+                createdAt: new Date(),
+                updatedAt: new Date()
             };
 
             const ticketId = await withTimeout(
-                verificationTicketService.create(ticketData),
-                15000,
+                verificationTicketService.create(ticketData as any),
+                30000,
                 'Create Firestore Ticket'
             );
             logStep('STEP 2 COMPLETE: Ticket created', { ticketId });
 
             // Step 3: Update User Profile
-            logStep('STEP 3: Updating partner operational status');
+            logStep('STEP 3: Updating partner status');
             await withTimeout(
                 userService.update(profile.uid, {
-                    hasActiveTicket: true,
-                    verified: false // Ensure it remains false until admin audit
+                    hasSubmittedTicket: true,
+                    verified: false
                 }),
-                10000,
+                15000,
                 'Update User Status'
             );
             logStep('STEP 3 COMPLETE: User profile updated');
@@ -190,31 +184,19 @@ export default function RaiseTicketPage() {
             logStep('SUBMISSION SUCCESS: All steps completed');
             setSuccess(true);
 
-            setTimeout(() => {
-                logStep('Redirecting to dashboard');
-                router.push('/relief-partner');
-            }, 3000);
-
         } catch (err: any) {
             logStep('SUBMISSION FAILED', {
                 message: err.message,
-                code: err.code,
-                stack: err.stack
+                code: err.code
             });
 
-            let displayError = 'Failed to submit verification ticket. ';
-            if (err.message?.includes('timeout')) {
-                displayError += 'The request took too long. Please check your internet connection.';
-            } else if (err.code === 'permission-denied') {
-                displayError += 'Access denied. Please ensure you are logged in correctly.';
-            } else {
-                displayError += err.message || 'An unexpected error occurred.';
-            }
+            const userFriendlyError = err.message.includes('Cloudinary')
+                ? `Media upload failed: ${err.message}. Please check your Cloudinary configuration.`
+                : `Submission failed: ${err.message}. If this persists, try removing images/videos to submit "Instantly".`;
 
-            setError(displayError);
+            setError(userFriendlyError);
         } finally {
             setLoading(false);
-            logStep('Cleanup: Resetting loading state');
         }
     };
 
@@ -243,7 +225,7 @@ export default function RaiseTicketPage() {
         );
     }
 
-    if (profile?.hasActiveTicket) {
+    if (profile?.hasSubmittedTicket) {
         return (
             <DashboardLayout>
                 <div className="max-w-2xl mx-auto py-20 px-4 text-center">
@@ -386,7 +368,7 @@ export default function RaiseTicketPage() {
                                 {/* Image Upload */}
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium text-gray-400">Proof Images *</label>
+                                        <label className="text-sm font-medium text-gray-400">Proof Images (Optional)</label>
                                         <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">IDs, Certs, etc.</span>
                                     </div>
 
@@ -403,7 +385,7 @@ export default function RaiseTicketPage() {
                                     <input
                                         id="image-upload"
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/*, .pdf, .jpg, .jpeg, .png, .webp"
                                         multiple
                                         className="hidden"
                                         onChange={(e) => {
@@ -432,7 +414,7 @@ export default function RaiseTicketPage() {
                                 {/* Video Upload */}
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium text-gray-400">Proof Videos</label>
+                                        <label className="text-sm font-medium text-gray-400">Proof Videos (Optional)</label>
                                         <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Operation Footage</span>
                                     </div>
 
@@ -449,7 +431,7 @@ export default function RaiseTicketPage() {
                                     <input
                                         id="video-upload"
                                         type="file"
-                                        accept="video/*"
+                                        accept="video/*, .mp4, .mkv, .mov, .avi"
                                         multiple
                                         className="hidden"
                                         onChange={(e) => {

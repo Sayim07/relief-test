@@ -72,7 +72,7 @@ export default function PartnerVerification() {
                 organization: ticket.organizationName,
                 location: ticket.location,
                 reliefCategories: ticket.categories,
-                hasActiveTicket: false // Ticket is resolved
+                hasSubmittedTicket: false // Ticket is resolved
             });
 
             await loadPendingTickets();
@@ -96,7 +96,7 @@ export default function PartnerVerification() {
         try {
             await verificationTicketService.updateStatus(ticketId, 'rejected', reason);
             await userService.update(uid, {
-                hasActiveTicket: false
+                hasSubmittedTicket: false
             });
             await loadPendingTickets();
             setSelectedTicket(null);
