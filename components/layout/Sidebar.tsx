@@ -24,9 +24,9 @@ interface SidebarItem {
 
 const sidebarItems: SidebarItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'My Wallet', href: '/wallet', icon: Wallet },
-  { label: 'Transactions', href: '/transactions', icon: Receipt },
-  { label: 'Distributions', href: '/admin/distributions', icon: Send, roles: ['admin'] },
+  { label: 'My Wallet', href: '/wallet', icon: Wallet, roles: ['donor', 'relief_partner'] },
+  { label: 'Transactions', href: '/transactions', icon: Receipt, roles: ['donor', 'relief_partner'] },
+  // { label: 'Distributions', href: '/admin/distributions', icon: Send, roles: ['admin'] }, // Removed per request
 
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
