@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { donationService, receiptService } from '@/lib/firebase/services/index';
 import { useState, useEffect } from 'react';
 import { Receipt, ExternalLink } from 'lucide-react';
-import PageLoader from '@/components/ui/PageLoader';
+import Loader from '@/components/ui/Loader';
 
 export default function TransactionsPage() {
   const { profile } = useAuth();
@@ -43,9 +43,11 @@ export default function TransactionsPage() {
   };
 
   if (loading) {
-    if (loading) {
-      return <PageLoader />;
-    }
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader />
+      </div>
+    );
   }
 
   return (

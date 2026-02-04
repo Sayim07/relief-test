@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/lib/types/user';
-import { Loader2 } from 'lucide-react';
+import Loader from '@/components/ui/Loader';
 
 interface WithAuthProps {
   children: React.ReactNode;
@@ -47,10 +47,7 @@ export function withAuth<P extends object>(
     if (loading) {
       return (
         <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600">Loading...</p>
-          </div>
+          <Loader />
         </div>
       );
     }
@@ -97,10 +94,7 @@ export function AuthGuard({ children, requiredRole, requiredRoles, redirectTo }:
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
-        </div>
+        <Loader />
       </div>
     );
   }

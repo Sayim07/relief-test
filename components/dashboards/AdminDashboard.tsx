@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useWallet } from '@/hooks/useWallet';
 import { reliefFundService, reliefPartnerAssignmentService, userService, donationService, reliefRequestService } from '@/lib/firebase/services/index';
 import MetricCard from '@/components/ui/MetricCard';
+import Loader from '@/components/ui/Loader';
 import DonationVerification from '@/components/admin/DonationVerification';
 import FundManagement from '@/components/admin/FundManagement';
 import FundDistribution from '@/components/admin/FundDistribution';
@@ -115,8 +116,8 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center py-32">
+        <Loader />
       </div>
     );
   }

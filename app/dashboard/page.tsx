@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import PageLoader from '@/components/ui/PageLoader';
+import Loader from '@/components/ui/Loader';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -32,10 +32,16 @@ export default function DashboardPage() {
   }, [profile, loading, router]);
 
   if (loading) {
-    return <PageLoader />;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <Loader />
+      </div>
+    );
   }
 
   return (
-    <PageLoader />
+    <div className="flex items-center justify-center min-h-screen bg-black">
+      <Loader />
+    </div>
   );
 }

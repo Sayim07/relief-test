@@ -11,6 +11,7 @@ import type {
   Receipt,
 } from '@/lib/types/database';
 import MetricCard from '@/components/ui/MetricCard';
+import Loader from '@/components/ui/Loader';
 import {
   Wallet,
   FileText,
@@ -248,8 +249,8 @@ export default function ReliefPartnerDashboard() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-4">
-        <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin shadow-[0_0_20px_rgba(37,99,235,0.2)]" />
-        <p className="text-gray-500 font-bold animate-pulse uppercase tracking-widest text-xs">Syncing Partner Data...</p>
+        <Loader />
+        <p className="text-gray-500 font-bold animate-pulse uppercase tracking-widest text-xs mt-4">Syncing Partner Data...</p>
       </div>
     );
   }
