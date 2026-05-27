@@ -6,7 +6,7 @@
  */
 
 import { collection, doc, setDoc, getDocs, query } from 'firebase/firestore';
-import { db } from './config';
+import { db, isFirebaseConfigured } from './config';
 import { categoryService, CategoryDefinition } from '../firebase/services';
 
 /**
@@ -49,6 +49,11 @@ export const DEFAULT_CATEGORIES: CategoryDefinition[] = [
  * Initialize categories collection if it's empty
  */
 export async function initializeCategories(): Promise<void> {
+  if (!isFirebaseConfigured) {
+    console.log('ℹ️ Firebase not configured; skipping category initialization.');
+    return;
+  }
+
   try {
     // Check if categories already exist
     const existingCategories = await categoryService.getAll();
@@ -85,6 +90,11 @@ export async function initializeCategories(): Promise<void> {
  * Initialize all Firestore collections
  */
 export async function initializeFirestore(): Promise<void> {
+  if (!isFirebaseConfigured) {
+    console.log('ℹ️ Firebase not configured; skipping Firestore initialization.');
+    return;
+  }
+
   try {
     console.log('🔥 Initializing Firestore collections...');
     await initializeCategories();
@@ -99,6 +109,10 @@ export async function initializeFirestore(): Promise<void> {
  * Check if Firestore is properly configured
  */
 export async function checkFirestoreConnection(): Promise<boolean> {
+  if (!isFirebaseConfigured) {
+    return false;
+  }
+
   try {
     // Try to read from Firestore
     const categoriesRef = collection(db, 'categories');
