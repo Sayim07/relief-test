@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# pdf documents
+BLOCKCHAIN WORKING IN OUR PROJECT.pdf
+TYPE OF BLOCKCHAIN USED IN YOUR PROJECT.pdf
